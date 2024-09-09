@@ -1,7 +1,7 @@
-# Versie 5.12
+# Versie 5.13
 
 blueprint:
-  name: Ventilatiesysteem met Hysteresis en Fallbacks
+  name: GMS Ventilatiesysteem v5.13
   description: >
     GMS Ventilatie zorgt ervoor dat de kamertemperatuur gereguleerd wordt door buitenlucht te gebruiken met simpele ventilatoren. Deze worden in en uitgeschakeld op basis van temperatuursensoren in huis en de weathersensoren buiten.
   domain: automation
