@@ -1,0 +1,48 @@
+blueprint:
+  name: Oplader GMS Tablet Automatisering v1.01
+  description: "Automatisering voor het opladen van een apparaat zoals een tablet, schakelt in onder 15% en uit boven 90%"
+  domain: automation
+  input:
+    batterij_sensor:
+      name: Batterij Sensor
+      description: "Selecteer de sensor die de batterijstatus van de tablet weergeeft"
+      selector:
+        entity:
+          domain: sensor
+    oplader_switch:
+      name: Oplader Switch
+      description: "Selecteer de switch die de oplader schakelt"
+      selector:
+        entity:
+          domain: switch
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input batterij_sensor
+    below: 15
+  - platform: numeric_state
+    entity_id: !input batterij_sensor
+    above: 90
+
+condition: []
+
+action:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: !input batterij_sensor
+            below: 15
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input oplader_switch
+      - conditions:
+          - condition: numeric_state
+            entity_id: !input batterij_sensor
+            above: 90
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input oplader_switch
+
+mode: single
