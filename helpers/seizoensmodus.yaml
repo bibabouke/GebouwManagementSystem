@@ -1,0 +1,8 @@
+input_select:
+  seizoensmodus:
+    name: Seizoensmodus
+    options:
+      - Zomerstand
+      - Winterstand
+    initial: Zomerstand
+    icon: mdi:weather-sunny
