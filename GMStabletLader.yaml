@@ -1,3 +1,4 @@
+# Versie 1.02
 blueprint:
   name: GMS Tablet Oplader automatisering v1.02
   description: "Automatisering voor het opladen van een apparaat zoals een tablet, schakelt in onder 15% en uit boven 90%"
