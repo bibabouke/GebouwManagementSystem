@@ -1,13 +1,7 @@
-input_select:
-  seizoensmodus:
-    name: "Seizoensmodus"
-    options:
-      - "Winterstand"
-      - "Zomerstand"
-      - "Herfststand"
-      - "Lentestand"
-    icon: "mdi:weather-partly-cloudy"
-    initial: "Zomerstand"
-    friendly_name: "Kies het huidige seizoen"
-    entity_picture: "/local/images/seizoensmodus_icon.png"  # Optioneel: afbeelding voor visuele representatie
-    unit_of_measurement: "Seizoen"
+options:
+  - Zomerstand
+  - Winterstand
+  - Herfststand
+  - Lentestand
+editable: true
+friendly_name: Seizoensmodus
