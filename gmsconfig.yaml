@@ -1,0 +1,33 @@
+# Gebouw Management Systeem Configuratie Bestanden
+# Versie 0.02
+
+algemeen:
+  seizoensmodus:
+    huidige_seizoensmodus: "Zomerstand"  # Mogelijke opties: Zomerstand, Winterstand, Herfststand, Lentestand
+    laatste_wijziging: "2024-09-15T12:15:00"  # Datum en tijd van de laatste seizoenswijziging
+  vakantiemodus:
+    status: false  # true voor ingeschakelde vakantiemodus, false voor uitgeschakelde vakantiemodus
+    laatste_activatie: "2024-08-10T09:00:00"  # Wanneer de vakantiemodus voor het laatst is ingeschakeld
+
+insectenlampen:
+  update_interval: 15  # De interval in minuten waarop het script zichzelf controleert (via UI aanpasbaar)
+  aantal_cycli: 4  # Hoe vaak de lampen aan- en uitgaan per nacht
+  duur_per_activatie: 15  # De tijdsduur (in minuten) dat de lampen bij elke activatie aan blijven
+  triggers:
+    temperatuur_min: 10  # Minimale temperatuur waarbij de lampen aangaan
+    temperatuur_max: 35  # Maximale temperatuur waarbij de lampen aangaan
+    luchtvochtigheid_min: 60  # Minimale luchtvochtigheid waarbij de lampen aangaan
+    regen_max: 0.5  # Maximale regenval in mm/h waarbij de lampen nog aangaan
+
+ventilatiesysteem:
+  update_interval: 5  # Interval in minuten voor controle van het ventilatiesysteem
+  hysteresis: 0.5  # Hysteresiswaarde voor temperatuurcontrole
+  minimum_temp: 19  # Minimum temperatuur waarbij de ventilatoren aangaan
+  maximum_temp: 25  # Maximale temperatuur waarbij ventilatoren uitgaan
+
+logging:
+  enable_logging: true  # Zet logging aan of uit
+  log_seizoensmodus: true  # Log de wijzigingen in seizoensmodus
+  log_vakantiemodus: true  # Log de wijzigingen in vakantiemodus
+  log_insectenlampen: true  # Log het gedrag van de insectenlampen
+  log_ventilatiesysteem: true  # Log het gedrag van het ventilatiesysteem
