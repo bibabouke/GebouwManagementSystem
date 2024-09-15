@@ -1,0 +1,4 @@
+- platform: file
+  name: GMS Config
+  file_path: /config/gmsconfig.yaml
+  file_format: yaml
