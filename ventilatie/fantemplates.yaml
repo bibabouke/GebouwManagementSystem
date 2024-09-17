@@ -1,0 +1,25 @@
+# Versie 2.1 17-09-2024
+# Error verholpen als sensor uit staat
+- platform: template
+  fans:
+    central_ventilation:
+      friendly_name: "Central Ventilation"
+      value_template: "{{ states('light.afzuiginstallatie') | default('off') }}"
+      percentage_template: >-
+        {% if state_attr('light.afzuiginstallatie', 'brightness') is not none %}
+          {{ (state_attr('light.afzuiginstallatie', 'brightness') / 255 * 100) | int }}
+        {% else %}
+          0
+        {% endif %}
+      speed_count: 3
+      set_percentage:
+        service: light.turn_on
+        entity_id: light.afzuiginstallatie
+        data_template:
+          brightness_pct: "{{ percentage | int }}"
+      turn_on:
+        service: homeassistant.turn_on
+        entity_id: light.afzuiginstallatie
+      turn_off:
+        service: homeassistant.turn_off
+        entity_id: light.afzuiginstallatie
