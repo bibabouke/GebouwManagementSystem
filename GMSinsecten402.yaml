@@ -328,8 +328,9 @@ action:
                     minutes: !input 'insect_lamp_duration_lente'
                 - service: switch.turn_off
                   target: !input 'insectenlampen'
-# Toevoegen van de default actie
-  default:
-    - service: switch.turn_off
-      target: !input 'insectenlampen'
+
+      default:
+        - service: switch.turn_off
+          target: !input 'insectenlampen'
+
 mode: single
