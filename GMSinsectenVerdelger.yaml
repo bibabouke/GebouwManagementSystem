@@ -1,5 +1,5 @@
 blueprint:
-  name: Insectenlamp Automatisering v4.11
+  name: GMS Insecten Verdelging v4.12
   description: >
     Automatische bediening van insectenlampen op basis van weersomstandigheden en seizoensmodi. 
     De automatisering synchroniseert elke 2 uur na middernacht en controleert de weersomstandigheden
