@@ -28,7 +28,7 @@ blueprint:
     min_temp:
       name: Minimale Temperatuur
       description: Muggen zijn vooral actief bij temperaturen boven 10°C. Stel hier de minimale buitentemperatuur in voor de activering van de insectenlampen.
-      default: 12
+      default: 13
       selector:
         number:
           min: 0
@@ -152,7 +152,7 @@ blueprint:
       name: Herfst - Tijd dat de lamp aan blijft (in minuten)
       description: >
         Stel de duur in dat de insectenlamp aanblijft in de herfst.
-      default: 12
+      default: 9
       selector:
         number:
           min: 5
@@ -163,7 +163,7 @@ blueprint:
       name: Herfst - Aantal activatiecycli per avond
       description: >
         Stel in hoe vaak de insectenlamp per avond wordt geactiveerd in de herfst.
-      default: 3
+      default: 2
       selector:
         number:
           min: 1
