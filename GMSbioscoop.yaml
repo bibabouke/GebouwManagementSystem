@@ -19,48 +19,48 @@ blueprint:
       name: Netflix-kleur
       description: Kleur en helderheid wanneer Netflix wordt bekeken.
       default:
-        brightness: 50
         color: [255, 0, 0]
+        brightness: 50
       selector:
         color_rgb: {}
     youtube_color:
       name: YouTube-kleur
       description: Kleur en helderheid wanneer YouTube wordt bekeken.
       default:
-        brightness: 50
         color: [255, 77, 0]
+        brightness: 50
       selector:
         color_rgb: {}
     google_color:
       name: Google Launcher-kleur
       description: Kleur en helderheid voor Google Launcher.
       default:
-        brightness: 100
         color: [255, 106, 87]
+        brightness: 100
       selector:
         color_rgb: {}
     kpn_color:
       name: KPN-kleur
       description: Kleur en helderheid wanneer KPN-app wordt bekeken.
       default:
-        brightness: 50
         color: [255, 0, 0]
+        brightness: 50
       selector:
         color_rgb: {}
     day_brightness:
       name: Dag helderheid
       description: Standaard helderheid en kleur overdag (06:00 - 17:00).
       default:
-        brightness: 100
         kelvin: 3900
+        brightness: 100
       selector:
         color_temp: {}
     evening_brightness:
       name: Avond helderheid
       description: Standaard helderheid en kleur ’s avonds (17:00 - 06:00).
       default:
-        brightness: 65
         color_temp: 428
+        brightness: 65
       selector:
         color_temp: {}
 
