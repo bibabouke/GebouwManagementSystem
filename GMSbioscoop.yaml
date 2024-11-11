@@ -1,1 +1,185 @@
+blueprint:
+  name: Slaapkamer - lichtinstellingen en TV kijken
+  description: Pas kleur en helderheid van lampen aan op basis van TV-status.
+  domain: automation
+  input:
+    tv_media_player:
+      name: TV Media Player
+      description: Selecteer de TV die moet worden gemonitord.
+      selector:
+        entity:
+          domain: media_player
+    lampen_groep:
+      name: Lampen Groep
+      description: Selecteer de groep lampen die worden aangepast.
+      selector:
+        entity:
+          domain: light
+    netflix_color:
+      name: Netflix-kleur
+      description: Kleur en helderheid wanneer Netflix wordt bekeken.
+      default:
+        brightness: 50
+        color: [255, 0, 0]
+      selector:
+        color_rgb: {}
+    youtube_color:
+      name: YouTube-kleur
+      description: Kleur en helderheid wanneer YouTube wordt bekeken.
+      default:
+        brightness: 50
+        color: [255, 77, 0]
+      selector:
+        color_rgb: {}
+    google_color:
+      name: Google Launcher-kleur
+      description: Kleur en helderheid voor Google Launcher.
+      default:
+        brightness: 100
+        color: [255, 106, 87]
+      selector:
+        color_rgb: {}
+    kpn_color:
+      name: KPN-kleur
+      description: Kleur en helderheid wanneer KPN-app wordt bekeken.
+      default:
+        brightness: 50
+        color: [255, 0, 0]
+      selector:
+        color_rgb: {}
+    day_brightness:
+      name: Dag helderheid
+      description: Standaard helderheid en kleur overdag (06:00 - 17:00).
+      default:
+        brightness: 100
+        kelvin: 3900
+      selector:
+        color_temp: {}
+    evening_brightness:
+      name: Avond helderheid
+      description: Standaard helderheid en kleur ’s avonds (17:00 - 06:00).
+      default:
+        brightness: 65
+        color_temp: 428
+      selector:
+        color_temp: {}
 
+trigger:
+  - platform: state
+    entity_id: !input tv_media_player
+    attribute: app_id
+  - platform: state
+    entity_id: !input tv_media_player
+    from: "on"
+    to: "off"
+  - platform: state
+    entity_id: !input lampen_groep
+    to: "on"
+
+condition: []
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.from_state.state == 'on' and trigger.to_state.state == 'off' }}"
+        sequence:
+          - service: light.turn_off
+            target:
+              entity_id: !input lampen_groep
+
+      # Netflix-instelling
+      - conditions:
+          - condition: time
+            after: "17:00:00"
+            before: "06:00:00"
+          - condition: state
+            entity_id: !input tv_media_player
+            attribute: app_id
+            state: com.netflix.ninja
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input lampen_groep
+            data:
+              brightness_pct: !input netflix_color.brightness
+              rgb_color: !input netflix_color.color
+
+      # YouTube-instelling
+      - conditions:
+          - condition: time
+            after: "17:00:00"
+            before: "06:00:00"
+          - condition: state
+            entity_id: !input tv_media_player
+            attribute: app_id
+            state: com.google.android.youtube.tv
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input lampen_groep
+            data:
+              brightness_pct: !input youtube_color.brightness
+              rgb_color: !input youtube_color.color
+
+      # Google Launcher-instelling
+      - conditions:
+          - condition: time
+            after: "17:00:00"
+            before: "06:00:00"
+          - condition: state
+            entity_id: !input tv_media_player
+            attribute: app_id
+            state: com.google.android.apps.tv.launcherx
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input lampen_groep
+            data:
+              brightness_pct: !input google_color.brightness
+              rgb_color: !input google_color.color
+
+      # KPN-instelling
+      - conditions:
+          - condition: time
+            after: "17:00:00"
+            before: "06:00:00"
+          - condition: state
+            entity_id: !input tv_media_player
+            attribute: app_id
+            state: com.kpn.kpnandroidtv
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input lampen_groep
+            data:
+              brightness_pct: !input kpn_color.brightness
+              rgb_color: !input kpn_color.color
+
+    default:
+      - choose:
+          # Overdag
+          - conditions:
+              - condition: time
+                after: "06:00:00"
+                before: "17:00:00"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: !input lampen_groep
+                data:
+                  brightness_pct: !input day_brightness.brightness
+                  kelvin: !input day_brightness.kelvin
+          # Avond
+          - conditions:
+              - condition: time
+                after: "17:00:00"
+                before: "06:00:00"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: !input lampen_groep
+                data:
+                  brightness_pct: !input evening_brightness.brightness
+                  color_temp: !input evening_brightness.color_temp
+mode: single
