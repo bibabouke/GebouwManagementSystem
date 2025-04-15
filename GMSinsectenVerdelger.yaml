@@ -1,21 +1,31 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.18
+  name: GMS Insecten Verdelging v4.30
   description: >
     Automatische bediening van insectenlampen op basis van weersomstandigheden en seizoensmodi.
-    In deze versie is logica toegepast waarbij de regenwaarde via een externe helper (sensor.neerslagwaarde)
-    wordt gelezen. Dit voorkomt fouten bij ontbrekende of 'None' waardes in de Buienradar-weersensor.
+    ✅ Ondersteuning voor zowel lampen (light) als slimme stekkers (switch), ook gecombineerd.
+    ✅ Regenwaarde wordt via een helper-sensor ingelezen (None wordt afgevangen).
+    ✅ Seizoenslogica stuurt cycli, pauzes en duur aan per stand.
+    ✅ Geschikt voor gebruik zonder !include in blueprint acties.
 
   domain: automation
   input:
-    insectenlampen:
-      name: Insectenlampen
-      description: Selecteer de insectenlampen (switch of light).
+    lampen_switch:
+      name: Insectenlampen (Switches)
+      description: Selecteer de insectenlampen van het type 'switch'. Laat leeg indien niet van toepassing.
+      default: {}
       selector:
         target:
           entity:
-            domain:
-              - switch
-              - light
+            domain: switch
+
+    lampen_light:
+      name: Insectenlampen (Lampen)
+      description: Selecteer de insectenlampen van het type 'light'. Laat leeg indien niet van toepassing.
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
 
     weersensor:
       name: Weersensor
@@ -198,98 +208,136 @@ condition:
     entity_id: !input neerslag_helper
     below: !input max_rain
 
+  - condition: state
+    entity_id: !input vacation_mode
+    state: 'off'
+
 action:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Zomerstand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Zomerstand' }}"
         sequence:
-          - service: switch.turn_on
-            target: !input insectenlampen
+          - service: homeassistant.turn_on
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - delay:
               minutes: !input insect_lamp_duration_summer
-          - service: switch.turn_off
-            target: !input insectenlampen
+          - service: homeassistant.turn_off
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - repeat:
               count: !input insect_lamp_cycles_summer
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_summer
-                - service: switch.turn_on
-                  target: !input insectenlampen
+                - service: homeassistant.turn_on
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
                 - delay:
                     minutes: !input insect_lamp_duration_summer
-                - service: switch.turn_off
-                  target: !input insectenlampen
+                - service: homeassistant.turn_off
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Winterstand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Winterstand' }}"
         sequence:
-          - service: switch.turn_on
-            target: !input insectenlampen
+          - service: homeassistant.turn_on
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - delay:
               minutes: !input insect_lamp_duration_winter
-          - service: switch.turn_off
-            target: !input insectenlampen
+          - service: homeassistant.turn_off
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - repeat:
               count: !input insect_lamp_cycles_winter
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_winter
-                - service: switch.turn_on
-                  target: !input insectenlampen
+                - service: homeassistant.turn_on
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
                 - delay:
                     minutes: !input insect_lamp_duration_winter
-                - service: switch.turn_off
-                  target: !input insectenlampen
+                - service: homeassistant.turn_off
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Herfststand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Herfststand' }}"
         sequence:
-          - service: switch.turn_on
-            target: !input insectenlampen
+          - service: homeassistant.turn_on
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - delay:
               minutes: !input insect_lamp_duration_herfst
-          - service: switch.turn_off
-            target: !input insectenlampen
+          - service: homeassistant.turn_off
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - repeat:
               count: !input insect_lamp_cycles_herfst
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_herfst
-                - service: switch.turn_on
-                  target: !input insectenlampen
+                - service: homeassistant.turn_on
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
                 - delay:
                     minutes: !input insect_lamp_duration_herfst
-                - service: switch.turn_off
-                  target: !input insectenlampen
+                - service: homeassistant.turn_off
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Lentestand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Lentestand' }}"
         sequence:
-          - service: switch.turn_on
-            target: !input insectenlampen
+          - service: homeassistant.turn_on
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - delay:
               minutes: !input insect_lamp_duration_lente
-          - service: switch.turn_off
-            target: !input insectenlampen
+          - service: homeassistant.turn_off
+            target:
+              entity_id: >
+                {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
           - repeat:
               count: !input insect_lamp_cycles_lente
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_lente
-                - service: switch.turn_on
-                  target: !input insectenlampen
+                - service: homeassistant.turn_on
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
                 - delay:
                     minutes: !input insect_lamp_duration_lente
-                - service: switch.turn_off
-                  target: !input insectenlampen
+                - service: homeassistant.turn_off
+                  target:
+                    entity_id: >
+                      {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
 
     default:
-      - service: switch.turn_off
-        target: !input insectenlampen
+      - service: homeassistant.turn_off
+        target:
+          entity_id: >
+            {{ (lampen_switch.entity_id | default([])) + (lampen_light.entity_id | default([])) }}
 
 mode: restart
