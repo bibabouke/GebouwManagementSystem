@@ -1,15 +1,15 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.17
+  name: GMS Insecten Verdelging v4.18
   description: >
     Automatische bediening van insectenlampen op basis van weersomstandigheden en seizoensmodi.
-    In deze versie is nieuwe logica toegepast, instelbare delay en default off mode.
-    Regenwaarde None wordt behandeld als 0.0.
+    In deze versie is logica toegepast waarbij de regenwaarde via een externe helper (sensor.neerslagwaarde)
+    wordt gelezen. Dit voorkomt fouten bij ontbrekende of 'None' waardes in de Buienradar-weersensor.
 
   domain: automation
   input:
     insectenlampen:
       name: Insectenlampen
-      description: Selecteer de insectenlampen die je wilt aansturen (zowel switches als lights).
+      description: Selecteer de insectenlampen (switch of light).
       selector:
         target:
           entity:
@@ -19,34 +19,38 @@ blueprint:
 
     weersensor:
       name: Weersensor
-      description: Selecteer de weersensor die temperatuur, luchtvochtigheid en regen meet.
+      description: Selecteer de weersensor (zoals weather.buienradar).
       selector:
         entity:
           domain: weather
 
+    neerslag_helper:
+      name: Neerslagwaarde Helper
+      description: Een aparte template sensor die de neerslagwaarde uitleest en bij None fallbackt naar 0.0.
+      selector:
+        entity:
+          domain: sensor
+
     min_temp:
       name: Minimale Temperatuur
-      description: Muggen zijn vooral actief bij temperaturen boven 10°C. Stel hier de minimale buitentemperatuur in voor de activering van de insectenlampen.
       default: 13
       selector:
         number:
           min: 0
           max: 25
-          unit_of_measurement: '°C'
+          unit_of_measurement: °C
 
     max_temp:
       name: Maximale Temperatuur
-      description: Muggen zijn minder actief bij temperaturen boven 35°C. Stel hier de maximale buitentemperatuur in voor de activering van de insectenlampen.
       default: 35
       selector:
         number:
           min: 25
           max: 40
-          unit_of_measurement: '°C'
+          unit_of_measurement: °C
 
     min_humidity:
       name: Minimale Luchtvochtigheid
-      description: Muggen zijn het meest actief bij een luchtvochtigheid van meer dan 60%. Stel de minimum luchtvochtigheid in voor de activering van de insectenlampen.
       default: 60
       selector:
         number:
@@ -56,9 +60,6 @@ blueprint:
 
     max_rain:
       name: Maximale Regenintensiteit
-      description: >
-        Boven de 2 mm/uur (hevige regen) neemt de kans toe dat muggenlarven worden weggespoeld en je dus minder last hebt van muggen. 
-        Stel een maximum in tot 2 mm/uur. Advieswaarde: 0,5 mm/uur.
       default: 0.5
       selector:
         number:
@@ -67,22 +68,18 @@ blueprint:
           unit_of_measurement: 'mm/h'
 
     vacation_mode:
-      name: Vakantieschakelaar
-      description: >
-        Schakel de vakantiemodus in. Als deze modus is ingeschakeld, blijven de insectenlampen uit.
+      name: Vakantiemodus
       selector:
         entity:
           domain: input_boolean
 
     seizoensmodus:
       name: Seizoensmodus
-      description: Selecteer de seizoensmodus (Zomerstand, Winterstand, Herfststand, Lentestand).
       selector:
         entity:
           domain: input_select
 
     insect_lamp_duration_summer:
-      name: Zomer - Tijd dat de lamp aan blijft (in minuten)
       default: 15
       selector:
         number:
@@ -91,7 +88,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_cycles_summer:
-      name: Zomer - Aantal activatiecycli per avond
       default: 4
       selector:
         number:
@@ -100,7 +96,6 @@ blueprint:
           unit_of_measurement: 'cycli'
 
     pause_between_cycles_summer:
-      name: Zomer - Pauze tussen de cycli (in minuten)
       default: 30
       selector:
         number:
@@ -109,7 +104,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_duration_winter:
-      name: Winter - Tijd dat de lamp aan blijft (in minuten)
       default: 10
       selector:
         number:
@@ -118,7 +112,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_cycles_winter:
-      name: Winter - Aantal activatiecycli per avond
       default: 2
       selector:
         number:
@@ -127,7 +120,6 @@ blueprint:
           unit_of_measurement: 'cycli'
 
     pause_between_cycles_winter:
-      name: Winter - Pauze tussen de cycli (in minuten)
       default: 60
       selector:
         number:
@@ -136,7 +128,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_duration_herfst:
-      name: Herfst - Tijd dat de lamp aan blijft (in minuten)
       default: 9
       selector:
         number:
@@ -145,7 +136,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_cycles_herfst:
-      name: Herfst - Aantal activatiecycli per avond
       default: 2
       selector:
         number:
@@ -154,7 +144,6 @@ blueprint:
           unit_of_measurement: 'cycli'
 
     pause_between_cycles_herfst:
-      name: Herfst - Pauze tussen de cycli (in minuten)
       default: 45
       selector:
         number:
@@ -163,7 +152,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_duration_lente:
-      name: Lente - Tijd dat de lamp aan blijft (in minuten)
       default: 12
       selector:
         number:
@@ -172,7 +160,6 @@ blueprint:
           unit_of_measurement: 'minuten'
 
     insect_lamp_cycles_lente:
-      name: Lente - Aantal activatiecycli per avond
       default: 3
       selector:
         number:
@@ -181,7 +168,6 @@ blueprint:
           unit_of_measurement: 'cycli'
 
     pause_between_cycles_lente:
-      name: Lente - Pauze tussen de cycli (in minuten)
       default: 45
       selector:
         number:
@@ -191,9 +177,9 @@ blueprint:
 
 trigger:
   - platform: time
-    at: '00:00:00'
+    at: "00:00:00"
   - platform: time_pattern
-    hours: '/2'
+    hours: "/2"
     minutes: 0
 
 condition:
@@ -208,9 +194,9 @@ condition:
     attribute: humidity
     above: !input min_humidity
 
-  - condition: template
-    value_template: >
-      {{ (state_attr((!input weersensor), 'precipitation') | float(0)) < (!input max_rain) }}
+  - condition: numeric_state
+    entity_id: !input neerslag_helper
+    below: !input max_rain
 
 action:
   - choose:
@@ -301,6 +287,7 @@ action:
                     minutes: !input insect_lamp_duration_lente
                 - service: switch.turn_off
                   target: !input insectenlampen
+
     default:
       - service: switch.turn_off
         target: !input insectenlampen
