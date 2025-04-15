@@ -1,169 +1,170 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.13
+  name: GMS Insecten Verdelging v4.15
   description: >
     Automatische bediening van insectenlampen op basis van weersomstandigheden en seizoensmodi.
-    In deze versie is nieuwe logica toegepast, instelbare delay en default off mode. Regenwaarde None wordt behandeld als 0.0.
+    In deze versie is nieuwe logica toegepast, instelbare delay, default off mode,
+    en wordt een ontbrekende regenwaarde (None) geïnterpreteerd als 0.0 mm/h.
 
-  domain: automation
-  input:
-    insectenlampen:
-      name: Insectenlampen
-      selector:
-        target:
-          entity:
-            domain:
-              - switch
-              - light
-
-    weersensor:
-      name: Weersensor
-      selector:
+domain: automation
+input:
+  insectenlampen:
+    name: Insectenlampen
+    selector:
+      target:
         entity:
-          domain: weather
+          domain:
+            - switch
+            - light
 
-    min_temp:
-      name: Minimale Temperatuur
-      default: 13
-      selector:
-        number:
-          min: 0
-          max: 25
-          unit_of_measurement: '°C'
+  weersensor:
+    name: Weersensor
+    selector:
+      entity:
+        domain: weather
 
-    max_temp:
-      name: Maximale Temperatuur
-      default: 35
-      selector:
-        number:
-          min: 25
-          max: 40
-          unit_of_measurement: '°C'
+  min_temp:
+    name: Minimale Temperatuur
+    default: 13
+    selector:
+      number:
+        min: 0
+        max: 25
+        unit_of_measurement: '°C'
 
-    min_humidity:
-      name: Minimale Luchtvochtigheid
-      default: 60
-      selector:
-        number:
-          min: 50
-          max: 70
-          unit_of_measurement: '%'
+  max_temp:
+    name: Maximale Temperatuur
+    default: 35
+    selector:
+      number:
+        min: 25
+        max: 40
+        unit_of_measurement: '°C'
 
-    max_rain:
-      name: Maximale Regenintensiteit
-      default: 0.5
-      selector:
-        number:
-          min: 0
-          max: 2
-          unit_of_measurement: 'mm/h'
+  min_humidity:
+    name: Minimale Luchtvochtigheid
+    default: 60
+    selector:
+      number:
+        min: 50
+        max: 70
+        unit_of_measurement: '%'
 
-    vacation_mode:
-      name: Vakantieschakelaar
-      selector:
-        entity:
-          domain: input_boolean
+  max_rain:
+    name: Maximale Regenintensiteit
+    default: 0.5
+    selector:
+      number:
+        min: 0
+        max: 2
+        unit_of_measurement: 'mm/h'
 
-    seizoensmodus:
-      name: Seizoensmodus
-      selector:
-        entity:
-          domain: input_select
+  vacation_mode:
+    name: Vakantieschakelaar
+    selector:
+      entity:
+        domain: input_boolean
 
-    insect_lamp_duration_summer:
-      default: 15
-      selector:
-        number:
-          min: 5
-          max: 60
-          unit_of_measurement: 'minuten'
+  seizoensmodus:
+    name: Seizoensmodus
+    selector:
+      entity:
+        domain: input_select
 
-    insect_lamp_cycles_summer:
-      default: 4
-      selector:
-        number:
-          min: 1
-          max: 10
-          unit_of_measurement: 'cycli'
+  insect_lamp_duration_summer:
+    default: 15
+    selector:
+      number:
+        min: 5
+        max: 60
+        unit_of_measurement: 'minuten'
 
-    pause_between_cycles_summer:
-      default: 30
-      selector:
-        number:
-          min: 10
-          max: 60
-          unit_of_measurement: 'minuten'
+  insect_lamp_cycles_summer:
+    default: 4
+    selector:
+      number:
+        min: 1
+        max: 10
+        unit_of_measurement: 'cycli'
 
-    insect_lamp_duration_winter:
-      default: 10
-      selector:
-        number:
-          min: 5
-          max: 60
-          unit_of_measurement: 'minuten'
+  pause_between_cycles_summer:
+    default: 30
+    selector:
+      number:
+        min: 10
+        max: 60
+        unit_of_measurement: 'minuten'
 
-    insect_lamp_cycles_winter:
-      default: 2
-      selector:
-        number:
-          min: 1
-          max: 5
-          unit_of_measurement: 'cycli'
+  insect_lamp_duration_winter:
+    default: 10
+    selector:
+      number:
+        min: 5
+        max: 60
+        unit_of_measurement: 'minuten'
 
-    pause_between_cycles_winter:
-      default: 60
-      selector:
-        number:
-          min: 30
-          max: 120
-          unit_of_measurement: 'minuten'
+  insect_lamp_cycles_winter:
+    default: 2
+    selector:
+      number:
+        min: 1
+        max: 5
+        unit_of_measurement: 'cycli'
 
-    insect_lamp_duration_herfst:
-      default: 9
-      selector:
-        number:
-          min: 5
-          max: 60
-          unit_of_measurement: 'minuten'
+  pause_between_cycles_winter:
+    default: 60
+    selector:
+      number:
+        min: 30
+        max: 120
+        unit_of_measurement: 'minuten'
 
-    insect_lamp_cycles_herfst:
-      default: 2
-      selector:
-        number:
-          min: 1
-          max: 10
-          unit_of_measurement: 'cycli'
+  insect_lamp_duration_herfst:
+    default: 9
+    selector:
+      number:
+        min: 5
+        max: 60
+        unit_of_measurement: 'minuten'
 
-    pause_between_cycles_herfst:
-      default: 45
-      selector:
-        number:
-          min: 10
-          max: 90
-          unit_of_measurement: 'minuten'
+  insect_lamp_cycles_herfst:
+    default: 2
+    selector:
+      number:
+        min: 1
+        max: 10
+        unit_of_measurement: 'cycli'
 
-    insect_lamp_duration_lente:
-      default: 12
-      selector:
-        number:
-          min: 5
-          max: 60
-          unit_of_measurement: 'minuten'
+  pause_between_cycles_herfst:
+    default: 45
+    selector:
+      number:
+        min: 10
+        max: 90
+        unit_of_measurement: 'minuten'
 
-    insect_lamp_cycles_lente:
-      default: 3
-      selector:
-        number:
-          min: 1
-          max: 10
-          unit_of_measurement: 'cycli'
+  insect_lamp_duration_lente:
+    default: 12
+    selector:
+      number:
+        min: 5
+        max: 60
+        unit_of_measurement: 'minuten'
 
-    pause_between_cycles_lente:
-      default: 45
-      selector:
-        number:
-          min: 10
-          max: 90
-          unit_of_measurement: 'minuten'
+  insect_lamp_cycles_lente:
+    default: 3
+    selector:
+      number:
+        min: 1
+        max: 10
+        unit_of_measurement: 'cycli'
+
+  pause_between_cycles_lente:
+    default: 45
+    selector:
+      number:
+        min: 10
+        max: 90
+        unit_of_measurement: 'minuten'
 
 trigger:
   - platform: time
