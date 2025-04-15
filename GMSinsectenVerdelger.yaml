@@ -1,170 +1,193 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.15
+  name: GMS Insecten Verdelging v4.16
   description: >
     Automatische bediening van insectenlampen op basis van weersomstandigheden en seizoensmodi.
-    In deze versie is nieuwe logica toegepast, instelbare delay, default off mode,
-    en wordt een ontbrekende regenwaarde (None) geïnterpreteerd als 0.0 mm/h.
+    In deze versie is nieuwe logica toegepast, instelbare delay en default off mode.
+    Regenwaarde "None" wordt behandeld als 0.0.
 
-domain: automation
-input:
-  insectenlampen:
-    name: Insectenlampen
-    selector:
-      target:
+  domain: automation
+  input:
+    insectenlampen:
+      name: Insectenlampen
+      description: Selecteer de insectenlampen die je wilt aansturen (zowel switches als lights).
+      selector:
+        target:
+          entity:
+            domain:
+              - switch
+              - light
+
+    weersensor:
+      name: Weersensor
+      description: Selecteer de weersensor die temperatuur, luchtvochtigheid en regen meet.
+      selector:
         entity:
-          domain:
-            - switch
-            - light
+          domain: weather
 
-  weersensor:
-    name: Weersensor
-    selector:
-      entity:
-        domain: weather
+    min_temp:
+      name: Minimale Temperatuur
+      description: Muggen zijn vooral actief bij temperaturen boven 10°C. Stel hier de minimale buitentemperatuur in voor de activering van de insectenlampen.
+      default: 13
+      selector:
+        number:
+          min: 0
+          max: 25
+          unit_of_measurement: '°C'
 
-  min_temp:
-    name: Minimale Temperatuur
-    default: 13
-    selector:
-      number:
-        min: 0
-        max: 25
-        unit_of_measurement: '°C'
+    max_temp:
+      name: Maximale Temperatuur
+      description: Muggen zijn minder actief bij temperaturen boven 35°C. Stel hier de maximale buitentemperatuur in voor de activering van de insectenlampen.
+      default: 35
+      selector:
+        number:
+          min: 25
+          max: 40
+          unit_of_measurement: '°C'
 
-  max_temp:
-    name: Maximale Temperatuur
-    default: 35
-    selector:
-      number:
-        min: 25
-        max: 40
-        unit_of_measurement: '°C'
+    min_humidity:
+      name: Minimale Luchtvochtigheid
+      description: Muggen zijn het meest actief bij een luchtvochtigheid van meer dan 60%. Stel de minimum luchtvochtigheid in voor de activering van de insectenlampen.
+      default: 60
+      selector:
+        number:
+          min: 50
+          max: 70
+          unit_of_measurement: '%'
 
-  min_humidity:
-    name: Minimale Luchtvochtigheid
-    default: 60
-    selector:
-      number:
-        min: 50
-        max: 70
-        unit_of_measurement: '%'
+    max_rain:
+      name: Maximale Regenintensiteit
+      description: >
+        Boven de 2 mm/uur (hevige regen) neemt de kans toe dat muggenlarven worden weggespoeld en je dus minder last hebt van muggen. 
+        Stel een maximum in tot 2 mm/uur. Advieswaarde: 0,5 mm/uur.
+      default: 0.5
+      selector:
+        number:
+          min: 0
+          max: 2
+          unit_of_measurement: 'mm/h'
 
-  max_rain:
-    name: Maximale Regenintensiteit
-    default: 0.5
-    selector:
-      number:
-        min: 0
-        max: 2
-        unit_of_measurement: 'mm/h'
+    vacation_mode:
+      name: Vakantieschakelaar
+      description: >
+        Schakel de vakantiemodus in. Als deze modus is ingeschakeld, blijven de insectenlampen uit.
+      selector:
+        entity:
+          domain: input_boolean
 
-  vacation_mode:
-    name: Vakantieschakelaar
-    selector:
-      entity:
-        domain: input_boolean
+    seizoensmodus:
+      name: Seizoensmodus
+      description: Selecteer de seizoensmodus (Zomerstand, Winterstand, Herfststand, Lentestand).
+      selector:
+        entity:
+          domain: input_select
 
-  seizoensmodus:
-    name: Seizoensmodus
-    selector:
-      entity:
-        domain: input_select
+    insect_lamp_duration_summer:
+      name: Zomer - Tijd dat de lamp aan blijft (in minuten)
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: 'minuten'
 
-  insect_lamp_duration_summer:
-    default: 15
-    selector:
-      number:
-        min: 5
-        max: 60
-        unit_of_measurement: 'minuten'
+    insect_lamp_cycles_summer:
+      name: Zomer - Aantal activatiecycli per avond
+      default: 4
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: 'cycli'
 
-  insect_lamp_cycles_summer:
-    default: 4
-    selector:
-      number:
-        min: 1
-        max: 10
-        unit_of_measurement: 'cycli'
+    pause_between_cycles_summer:
+      name: Zomer - Pauze tussen de cycli (in minuten)
+      default: 30
+      selector:
+        number:
+          min: 10
+          max: 60
+          unit_of_measurement: 'minuten'
 
-  pause_between_cycles_summer:
-    default: 30
-    selector:
-      number:
-        min: 10
-        max: 60
-        unit_of_measurement: 'minuten'
+    insect_lamp_duration_winter:
+      name: Winter - Tijd dat de lamp aan blijft (in minuten)
+      default: 10
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: 'minuten'
 
-  insect_lamp_duration_winter:
-    default: 10
-    selector:
-      number:
-        min: 5
-        max: 60
-        unit_of_measurement: 'minuten'
+    insect_lamp_cycles_winter:
+      name: Winter - Aantal activatiecycli per avond
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 5
+          unit_of_measurement: 'cycli'
 
-  insect_lamp_cycles_winter:
-    default: 2
-    selector:
-      number:
-        min: 1
-        max: 5
-        unit_of_measurement: 'cycli'
+    pause_between_cycles_winter:
+      name: Winter - Pauze tussen de cycli (in minuten)
+      default: 60
+      selector:
+        number:
+          min: 30
+          max: 120
+          unit_of_measurement: 'minuten'
 
-  pause_between_cycles_winter:
-    default: 60
-    selector:
-      number:
-        min: 30
-        max: 120
-        unit_of_measurement: 'minuten'
+    insect_lamp_duration_herfst:
+      name: Herfst - Tijd dat de lamp aan blijft (in minuten)
+      default: 9
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: 'minuten'
 
-  insect_lamp_duration_herfst:
-    default: 9
-    selector:
-      number:
-        min: 5
-        max: 60
-        unit_of_measurement: 'minuten'
+    insect_lamp_cycles_herfst:
+      name: Herfst - Aantal activatiecycli per avond
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: 'cycli'
 
-  insect_lamp_cycles_herfst:
-    default: 2
-    selector:
-      number:
-        min: 1
-        max: 10
-        unit_of_measurement: 'cycli'
+    pause_between_cycles_herfst:
+      name: Herfst - Pauze tussen de cycli (in minuten)
+      default: 45
+      selector:
+        number:
+          min: 10
+          max: 90
+          unit_of_measurement: 'minuten'
 
-  pause_between_cycles_herfst:
-    default: 45
-    selector:
-      number:
-        min: 10
-        max: 90
-        unit_of_measurement: 'minuten'
+    insect_lamp_duration_lente:
+      name: Lente - Tijd dat de lamp aan blijft (in minuten)
+      default: 12
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: 'minuten'
 
-  insect_lamp_duration_lente:
-    default: 12
-    selector:
-      number:
-        min: 5
-        max: 60
-        unit_of_measurement: 'minuten'
+    insect_lamp_cycles_lente:
+      name: Lente - Aantal activatiecycli per avond
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: 'cycli'
 
-  insect_lamp_cycles_lente:
-    default: 3
-    selector:
-      number:
-        min: 1
-        max: 10
-        unit_of_measurement: 'cycli'
-
-  pause_between_cycles_lente:
-    default: 45
-    selector:
-      number:
-        min: 10
-        max: 90
-        unit_of_measurement: 'minuten'
+    pause_between_cycles_lente:
+      name: Lente - Pauze tussen de cycli (in minuten)
+      default: 45
+      selector:
+        number:
+          min: 10
+          max: 90
+          unit_of_measurement: 'minuten'
 
 trigger:
   - platform: time
