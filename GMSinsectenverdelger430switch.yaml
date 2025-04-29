@@ -9,11 +9,11 @@ blueprint:
   input:
     insectenlampen:
       name: Insectenlampen
-      description: Selecteer de insectenlampen die je wilt aansturen (alleen lights).
+      description: Selecteer de insectenlampen die je wilt aansturen (alleen switchs).
       selector:
         target:
           entity:
-            domain: light
+            domain: switch
 
     weersensor:
       name: Weersensor
@@ -219,91 +219,91 @@ action:
           - condition: template
             value_template: "{{ states('input_select.seizoensmodus') == 'Zomerstand' }}"
         sequence:
-          - service: light.turn_on
+          - service: switch.turn_on
             target: !input insectenlampen
           - delay:
               minutes: !input insect_lamp_duration_summer
-          - service: light.turn_off
+          - service: switch.turn_off
             target: !input insectenlampen
           - repeat:
               count: !input insect_lamp_cycles_summer
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_summer
-                - service: light.turn_on
+                - service: switch.turn_on
                   target: !input insectenlampen
                 - delay:
                     minutes: !input insect_lamp_duration_summer
-                - service: light.turn_off
+                - service: switch.turn_off
                   target: !input insectenlampen
 
       - conditions:
           - condition: template
             value_template: "{{ states('input_select.seizoensmodus') == 'Winterstand' }}"
         sequence:
-          - service: light.turn_on
+          - service: switch.turn_on
             target: !input insectenlampen
           - delay:
               minutes: !input insect_lamp_duration_winter
-          - service: light.turn_off
+          - service: switch.turn_off
             target: !input insectenlampen
           - repeat:
               count: !input insect_lamp_cycles_winter
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_winter
-                - service: light.turn_on
+                - service: switch.turn_on
                   target: !input insectenlampen
                 - delay:
                     minutes: !input insect_lamp_duration_winter
-                - service: light.turn_off
+                - service: switch.turn_off
                   target: !input insectenlampen
 
       - conditions:
           - condition: template
             value_template: "{{ states('input_select.seizoensmodus') == 'Herfststand' }}"
         sequence:
-          - service: light.turn_on
+          - service: switch.turn_on
             target: !input insectenlampen
           - delay:
               minutes: !input insect_lamp_duration_herfst
-          - service: light.turn_off
+          - service: switch.turn_off
             target: !input insectenlampen
           - repeat:
               count: !input insect_lamp_cycles_herfst
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_herfst
-                - service: light.turn_on
+                - service: switch.turn_on
                   target: !input insectenlampen
                 - delay:
                     minutes: !input insect_lamp_duration_herfst
-                - service: light.turn_off
+                - service: switch.turn_off
                   target: !input insectenlampen
 
       - conditions:
           - condition: template
             value_template: "{{ states('input_select.seizoensmodus') == 'Lentestand' }}"
         sequence:
-          - service: light.turn_on
+          - service: switch.turn_on
             target: !input insectenlampen
           - delay:
               minutes: !input insect_lamp_duration_lente
-          - service: light.turn_off
+          - service: switch.turn_off
             target: !input insectenlampen
           - repeat:
               count: !input insect_lamp_cycles_lente
               sequence:
                 - delay:
                     minutes: !input pause_between_cycles_lente
-                - service: light.turn_on
+                - service: switch.turn_on
                   target: !input insectenlampen
                 - delay:
                     minutes: !input insect_lamp_duration_lente
-                - service: light.turn_off
+                - service: switch.turn_off
                   target: !input insectenlampen
     default:
-      - service: light.turn_off
+      - service: switch.turn_off
         target: !input insectenlampen
 
 mode: restart
