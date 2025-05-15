@@ -1,0 +1,154 @@
+blueprint:
+  name: GMS Ventilatiesysteem v5.15
+  description: >
+    GMS Ventilatie regelt de kamertemperatuur met buitenlucht.
+    Kies tussen een weersensor (zoals Buienradar) of een losse buitentemperatuursensor.
+  domain: automation
+  min_version: "2025.5.0"
+
+  input:
+    # Sectie Ventilatoren
+    fan_switch:
+      name: Ventilator Schakelaar
+      description: "De ventilator die wordt bestuurd."
+      selector:
+        entity:
+          domain: switch
+
+    temp_sensor:
+      name: Temperatuursensor Binnen
+      description: "De sensor voor de temperatuur binnen."
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    # Keuze tussen weersensor en losse temperatuur buiten
+    weather_entity:
+      name: Weersensor (zoals Buienradar)
+      description: >
+        Wordt gebruikt als je géén losse buitensensor selecteert.
+        Temperatuur wordt uitgelezen via `state_attr('weather.x', 'temperature')`.
+      default: weather.buienradar
+      selector:
+        entity:
+          domain: weather
+
+    outside_temp_sensor:
+      name: Losse Temperatuursensor Buiten (optioneel)
+      description: >
+        Vul deze in als je een specifieke buitensensor wilt gebruiken in plaats van een weersensor.
+      default: ''
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    desired_temp:
+      name: Gewenste Kamertemperatuur
+      description: "De gewenste binnentemperatuur waarbij ventilatie moet helpen koelen."
+      default: 21.0
+      selector:
+        number:
+          min: 10
+          max: 30
+          step: 0.5
+          unit_of_measurement: "°C"
+
+    hysteresis:
+      name: Hysteresis
+      description: >
+        Marge om te voorkomen dat de ventilator telkens aan/uit schakelt rond het grenspunt.
+      default: 0.5
+      selector:
+        number:
+          min: 0.1
+          max: 5.0
+          step: 0.1
+          unit_of_measurement: "°C"
+
+    update_interval:
+      name: Update Interval / Minimale Schakeltijd
+      description: >
+        Hoe vaak de automatisering controleert (in minuten) én hoelang de ventilator minimaal
+        aan of uit blijft voor hercontrole.
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+          unit_of_measurement: "minuten"
+
+variables:
+  fan_switch_entity_id: !input fan_switch
+  temp_sensor_entity_id: !input temp_sensor
+  weather_entity_id: !input weather_entity
+  outside_temp_sensor_entity_id: !input outside_temp_sensor
+  desired_temp_value: !input desired_temp
+  hysteresis_value: !input hysteresis
+  update_interval_minutes: !input update_interval
+
+  # Binnentemperatuur met fallback
+  binnentemperatuur: >
+    {% set temp = states(temp_sensor_entity_id) %}
+    {{ temp | float(21.0) }}
+
+  # Buitentemperatuurlogica (voorkeur voor losse sensor)
+  buiten_temp: >
+    {% if outside_temp_sensor_entity_id %}
+      {% set temp = states(outside_temp_sensor_entity_id) %}
+      {{ temp | float(15.0) }}
+    {% else %}
+      {% set temp = state_attr(weather_entity_id, 'temperature') %}
+      {{ temp | float(15.0) }}
+    {% endif %}
+
+triggers:
+  - platform: state
+    entity_id: !input temp_sensor
+  - platform: state
+    entity_id: !input weather_entity
+  - platform: state
+    entity_id: !input outside_temp_sensor
+
+conditions: []
+
+actions:
+  - service: system_log.write
+    data:
+      message: >
+        Ventilatiecontrole: Buiten {{ buiten_temp }}°C, Binnen {{ binnentemperatuur }}°C,
+        Ventilator is {{ states(fan_switch_entity_id) }}.
+      level: info
+
+  - variables:
+      tijd_sinds_laatste_schakeling: >
+        {{ (as_timestamp(now()) - as_timestamp(states[fan_switch_entity_id].last_changed)) / 60 }}
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ binnentemperatuur > desired_temp_value + hysteresis_value
+                 and buiten_temp < binnentemperatuur
+                 and is_state(fan_switch_entity_id, 'off') }}
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input fan_switch
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ (binnentemperatuur <= desired_temp_value) or 
+                 (buiten_temp > desired_temp_value and binnentemperatuur <= buiten_temp)
+                 and is_state(fan_switch_entity_id, 'on') }}
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input fan_switch
+
+  - delay: "{{ update_interval_minutes * 60 }}"
+
+mode: restart
