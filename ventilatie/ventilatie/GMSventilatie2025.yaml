@@ -1,13 +1,11 @@
 blueprint:
-  name: GMS Ventilatiesysteem v5.15
+  name: GMS Ventilatiesysteem v5.16
   description: >
-    GMS Ventilatie regelt de kamertemperatuur met buitenlucht.
-    Kies tussen een weersensor (zoals Buienradar) of een losse buitentemperatuursensor.
+    Regelt kamertemperatuur automatisch met buitenlucht via ventilatoren.
+    Kies tussen een weersensor of een losse buitentemperatuursensor.
   domain: automation
-  min_version: "2025.5.0"
 
   input:
-    # Sectie Ventilatoren
     fan_switch:
       name: Ventilator Schakelaar
       description: "De ventilator die wordt bestuurd."
@@ -17,13 +15,12 @@ blueprint:
 
     temp_sensor:
       name: Temperatuursensor Binnen
-      description: "De sensor voor de temperatuur binnen."
+      description: "De sensor die de binnentemperatuur meet."
       selector:
         entity:
           domain: sensor
           device_class: temperature
 
-    # Keuze tussen weersensor en losse temperatuur buiten
     weather_entity:
       name: Weersensor (zoals Buienradar)
       description: >
@@ -46,7 +43,6 @@ blueprint:
 
     desired_temp:
       name: Gewenste Kamertemperatuur
-      description: "De gewenste binnentemperatuur waarbij ventilatie moet helpen koelen."
       default: 21.0
       selector:
         number:
@@ -57,8 +53,6 @@ blueprint:
 
     hysteresis:
       name: Hysteresis
-      description: >
-        Marge om te voorkomen dat de ventilator telkens aan/uit schakelt rond het grenspunt.
       default: 0.5
       selector:
         number:
@@ -69,9 +63,6 @@ blueprint:
 
     update_interval:
       name: Update Interval / Minimale Schakeltijd
-      description: >
-        Hoe vaak de automatisering controleert (in minuten) én hoelang de ventilator minimaal
-        aan of uit blijft voor hercontrole.
       default: 5
       selector:
         number:
@@ -89,12 +80,10 @@ variables:
   hysteresis_value: !input hysteresis
   update_interval_minutes: !input update_interval
 
-  # Binnentemperatuur met fallback
   binnentemperatuur: >
     {% set temp = states(temp_sensor_entity_id) %}
     {{ temp | float(21.0) }}
 
-  # Buitentemperatuurlogica (voorkeur voor losse sensor)
   buiten_temp: >
     {% if outside_temp_sensor_entity_id %}
       {% set temp = states(outside_temp_sensor_entity_id) %}
@@ -141,8 +130,8 @@ actions:
       - conditions:
           - condition: template
             value_template: >
-              {{ (binnentemperatuur <= desired_temp_value) or 
-                 (buiten_temp > desired_temp_value and binnentemperatuur <= buiten_temp)
+              {{ (binnentemperatuur <= desired_temp_value)
+                 or (buiten_temp > desired_temp_value and binnentemperatuur <= buiten_temp)
                  and is_state(fan_switch_entity_id, 'on') }}
         sequence:
           - service: switch.turn_off
