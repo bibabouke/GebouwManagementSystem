@@ -1,5 +1,5 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v1.1
+  name: Afzuiginstallatie Temperatuurregeling v1.2
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een dimbare lichtentiteit (bijv. fan via Zigbee light).
@@ -9,15 +9,15 @@ blueprint:
 
   input:
     binnen_temp_sensor:
-      name: Primaire Binnentemperatuursensor
-      description: Sensor voor de temperatuur in de ruimte die wordt afgevoerd.
+      name: "Primaire Binnentemperatuursensor"
+      description: "Sensor voor de temperatuur in de ruimte die wordt afgevoerd."
       selector:
         entity:
           domain: sensor
           device_class: temperature
 
     controle_binnen_sensor:
-      name: Vergelijkingssensor Binnen (optioneel)
+      name: "Vergelijkingssensor Binnen (optioneel)"
       description: >
         Sensor voor andere binnenruimte (bijv. woonkamer), zodat er geen warme buitenlucht
         wordt aangezogen als het buiten warmer is dan binnen.
@@ -28,28 +28,28 @@ blueprint:
           device_class: temperature
 
     buiten_temp_sensor:
-      name: Buitentemperatuursensor
-      description: Sensor of weersensor met buitentemperatuur in een attribuut of state.
+      name: "Buitentemperatuursensor"
+      description: "Sensor of weersensor met buitentemperatuur in een attribuut of state."
       selector:
         entity:
           domain: sensor
 
     buiten_temp_attribute:
-      name: Optioneel: Attribuut voor buitentemperatuur
-      description: Laat leeg als de sensor de temperatuur direct als state bevat.
+      name: "Optioneel: Attribuut voor buitentemperatuur"
+      description: "Laat leeg als de sensor de temperatuur direct als state bevat."
       default: ""
       selector:
         text:
 
     afzuiginstallatie_light:
-      name: Afzuiginstallatie Licht (dimbaar)
-      description: Lichtentiteit die de afzuiging aanstuurt via dimniveau.
+      name: "Afzuiginstallatie Licht (dimbaar)"
+      description: "Lichtentiteit die de afzuiging aanstuurt via dimniveau."
       selector:
         entity:
           domain: light
 
     richttemperatuur:
-      name: Richttemperatuur binnen
+      name: "Richttemperatuur binnen"
       default: 21.0
       selector:
         number:
@@ -59,7 +59,7 @@ blueprint:
           unit_of_measurement: "°C"
 
     hysteresis:
-      name: Hysteresis
+      name: "Hysteresis"
       default: 0.5
       selector:
         number:
