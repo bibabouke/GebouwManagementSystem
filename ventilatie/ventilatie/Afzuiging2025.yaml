@@ -1,0 +1,151 @@
+blueprint:
+  name: Afzuiginstallatie Temperatuurregeling v1.1
+  description: >
+    Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
+    Werkt met een dimbare lichtentiteit (bijv. fan via Zigbee light).
+    Alleen actief als buitenlucht koeler is dan binnenlucht.
+
+  domain: automation
+
+  input:
+    binnen_temp_sensor:
+      name: Primaire Binnentemperatuursensor
+      description: Sensor voor de temperatuur in de ruimte die wordt afgevoerd.
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    controle_binnen_sensor:
+      name: Vergelijkingssensor Binnen (optioneel)
+      description: >
+        Sensor voor andere binnenruimte (bijv. woonkamer), zodat er geen warme buitenlucht
+        wordt aangezogen als het buiten warmer is dan binnen.
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    buiten_temp_sensor:
+      name: Buitentemperatuursensor
+      description: Sensor of weersensor met buitentemperatuur in een attribuut of state.
+      selector:
+        entity:
+          domain: sensor
+
+    buiten_temp_attribute:
+      name: Optioneel: Attribuut voor buitentemperatuur
+      description: Laat leeg als de sensor de temperatuur direct als state bevat.
+      default: ""
+      selector:
+        text:
+
+    afzuiginstallatie_light:
+      name: Afzuiginstallatie Licht (dimbaar)
+      description: Lichtentiteit die de afzuiging aanstuurt via dimniveau.
+      selector:
+        entity:
+          domain: light
+
+    richttemperatuur:
+      name: Richttemperatuur binnen
+      default: 21.0
+      selector:
+        number:
+          min: 10
+          max: 30
+          step: 0.5
+          unit_of_measurement: "°C"
+
+    hysteresis:
+      name: Hysteresis
+      default: 0.5
+      selector:
+        number:
+          min: 0.1
+          max: 5.0
+          step: 0.1
+          unit_of_measurement: "°C"
+
+triggers:
+  - platform: state
+    entity_id: !input binnen_temp_sensor
+    for: "00:01:00"
+  - platform: state
+    entity_id: !input buiten_temp_sensor
+    for: "00:01:00"
+  - platform: state
+    entity_id: !input controle_binnen_sensor
+    for: "00:01:00"
+
+conditions: []
+
+actions:
+  - variables:
+      binnen: >
+        {{ states(!input binnen_temp_sensor) | float(0) }}
+
+      buiten: >
+        {% set attr = !input buiten_temp_attribute %}
+        {% if attr %}
+          {{ state_attr(!input buiten_temp_sensor, attr) | float(0) }}
+        {% else %}
+          {{ states(!input buiten_temp_sensor) | float(0) }}
+        {% endif %}
+
+      controlebinnen: >
+        {% if !input controle_binnen_sensor %}
+          {{ 21.0 }}
+        {% else %}
+          {{ states(!input controle_binnen_sensor) | float(21.0) }}
+        {% endif %}
+
+      richt: !input richttemperatuur
+      marge: !input hysteresis
+      verschil: "{{ binnen - buiten }}"
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ verschil > 3 and buiten < controlebinnen and binnen > richt + marge }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input afzuiginstallatie_light
+            data:
+              brightness_pct: 100
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ verschil > 1 and verschil <= 3 and buiten < controlebinnen and binnen > richt + marge }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input afzuiginstallatie_light
+            data:
+              brightness_pct: 66
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ verschil > 0 and verschil <= 1 and buiten < controlebinnen and binnen > richt + marge }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input afzuiginstallatie_light
+            data:
+              brightness_pct: 33
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ verschil <= 0 or buiten >= controlebinnen or binnen <= richt }}
+        sequence:
+          - service: light.turn_off
+            target:
+              entity_id: !input afzuiginstallatie_light
+
+mode: single
