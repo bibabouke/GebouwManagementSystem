@@ -1,9 +1,9 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v1.2
+  name: Afzuiginstallatie Temperatuurregeling v1.3
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een dimbare lichtentiteit (bijv. fan via Zigbee light).
-    Alleen actief als buitenlucht koeler is dan binnenlucht.
+    Alleen actief als buitenlucht koeler is dan binnenlucht én temperatuur boven richtpunt ligt.
 
   domain: automation
 
@@ -83,26 +83,30 @@ conditions: []
 
 actions:
   - variables:
+      binnen_temp_sensor_id: !input binnen_temp_sensor
+      buiten_temp_sensor_id: !input buiten_temp_sensor
+      controle_binnen_sensor_id: !input controle_binnen_sensor
+      buiten_temp_attr: !input buiten_temp_attribute
+      richt: !input richttemperatuur
+      marge: !input hysteresis
+
       binnen: >
-        {{ states(!input binnen_temp_sensor) | float(0) }}
+        {{ states(binnen_temp_sensor_id) | float(0) }}
 
       buiten: >
-        {% set attr = !input buiten_temp_attribute %}
-        {% if attr %}
-          {{ state_attr(!input buiten_temp_sensor, attr) | float(0) }}
+        {% if buiten_temp_attr %}
+          {{ state_attr(buiten_temp_sensor_id, buiten_temp_attr) | float(0) }}
         {% else %}
-          {{ states(!input buiten_temp_sensor) | float(0) }}
+          {{ states(buiten_temp_sensor_id) | float(0) }}
         {% endif %}
 
       controlebinnen: >
-        {% if !input controle_binnen_sensor %}
-          {{ 21.0 }}
+        {% if controle_binnen_sensor_id %}
+          {{ states(controle_binnen_sensor_id) | float(21.0) }}
         {% else %}
-          {{ states(!input controle_binnen_sensor) | float(21.0) }}
+          {{ 21.0 }}
         {% endif %}
 
-      richt: !input richttemperatuur
-      marge: !input hysteresis
       verschil: "{{ binnen - buiten }}"
 
   - choose:
