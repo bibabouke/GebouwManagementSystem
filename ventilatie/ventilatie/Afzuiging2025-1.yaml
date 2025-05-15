@@ -1,5 +1,5 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v1.3
+  name: Afzuiginstallatie Temperatuurregeling v1.4
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een dimbare lichtentiteit (bijv. fan via Zigbee light).
@@ -75,9 +75,6 @@ triggers:
   - platform: state
     entity_id: !input buiten_temp_sensor
     for: "00:01:00"
-  - platform: state
-    entity_id: !input controle_binnen_sensor
-    for: "00:01:00"
 
 conditions: []
 
@@ -108,6 +105,16 @@ actions:
         {% endif %}
 
       verschil: "{{ binnen - buiten }}"
+
+  - service: system_log.write
+    data:
+      level: info
+      message: >
+        Afzuigcontrole uitgevoerd. Binnen: {{ binnen }}°C,
+        Buiten: {{ buiten }}°C,
+        Verschil: {{ verschil }}°C,
+        Richt: {{ richt }}°C,
+        Controlebinnen: {{ controlebinnen }}°C
 
   - choose:
       - conditions:
