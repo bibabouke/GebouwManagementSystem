@@ -1,5 +1,5 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v1.4
+  name: Afzuiginstallatie Temperatuurregeling v1.5
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een dimbare lichtentiteit (bijv. fan via Zigbee light).
@@ -120,7 +120,7 @@ actions:
       - conditions:
           - condition: template
             value_template: >
-              {{ verschil > 3 and buiten < controlebinnen and binnen > richt + marge }}
+              {{ verschil > 1.5 and buiten < controlebinnen and binnen > richt + marge }}
         sequence:
           - service: light.turn_on
             target:
@@ -131,7 +131,7 @@ actions:
       - conditions:
           - condition: template
             value_template: >
-              {{ verschil > 1 and verschil <= 3 and buiten < controlebinnen and binnen > richt + marge }}
+              {{ verschil > 0.8 and verschil <= 1.5 and buiten < controlebinnen and binnen > richt + marge }}
         sequence:
           - service: light.turn_on
             target:
@@ -142,7 +142,7 @@ actions:
       - conditions:
           - condition: template
             value_template: >
-              {{ verschil > 0 and verschil <= 1 and buiten < controlebinnen and binnen > richt + marge }}
+              {{ verschil > 0 and verschil <= 0.8 and buiten < controlebinnen and binnen > richt + marge }}
         sequence:
           - service: light.turn_on
             target:
