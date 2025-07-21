@@ -2,13 +2,15 @@ blueprint:
   name: GMS Insecten Verdelging v4.32lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
-    Toegevoegd: handmatige override via afstandsbediening (device trigger).
+    Regen wordt betrouwbaar geïnterpreteerd, ook als de waarde ontbreekt of onbekend is (None = 0).
+    Deze versie gebruikt 'variables' en veilige templates voor weerdata.
+    Toegevoegd: override-functie via afstandsbediening (keuze knop + duur).
 
   domain: automation
   input:
-
     insectenlampen:
       name: Insectenlampen
+      description: Selecteer de insectenlampen die je wilt aansturen (alleen lights).
       selector:
         target:
           entity:
@@ -16,6 +18,7 @@ blueprint:
 
     weersensor:
       name: Weersensor
+      description: Selecteer de weersensor die temperatuur, luchtvochtigheid en regen meet.
       selector:
         entity:
           domain: weather
@@ -27,7 +30,7 @@ blueprint:
         number:
           min: 0
           max: 25
-          unit_of_measurement: "°C"
+          unit_of_measurement: '°C'
 
     max_temp:
       name: Maximale Temperatuur
@@ -36,7 +39,7 @@ blueprint:
         number:
           min: 25
           max: 40
-          unit_of_measurement: "°C"
+          unit_of_measurement: '°C'
 
     min_humidity:
       name: Minimale Luchtvochtigheid
@@ -178,6 +181,7 @@ blueprint:
 
     override_device:
       name: Afstandsbediening
+      description: Selecteer het apparaat waarvan een knop override activeert.
       selector:
         device: {}
 
@@ -213,28 +217,15 @@ trigger:
     type: initial_press
     subtype: !input override_button
 
-condition:
-  - condition: or
-    conditions:
-      - condition: and
-        conditions:
-          - condition: state
-            entity_id: !input vacation_mode
-            state: "off"
-          - condition: template
-            value_template: >
-              {% set temp = state_attr(!input weersensor, 'temperature') %}
-              {{ temp is number and temp > !input min_temp and temp < !input max_temp }}
-          - condition: template
-            value_template: >
-              {% set vocht = state_attr(!input weersensor, 'humidity') %}
-              {{ vocht is number and vocht > !input min_humidity }}
-          - condition: template
-            value_template: >
-              {% set regen = state_attr(!input weersensor, 'precipitation') | float(0) %}
-              {{ regen < !input max_rain }}
-      - condition: template
-        value_template: "{{ trigger.platform == 'device' }}"
+variables:
+  weersensor_var: !input weersensor
+  max_rain_var: !input max_rain
+  min_temp_var: !input min_temp
+  max_temp_var: !input max_temp
+  min_humidity_var: !input min_humidity
+  vacation_var: !input vacation_mode
+
+condition: []
 
 action:
   - choose:
@@ -248,6 +239,29 @@ action:
               minutes: !input override_duration
           - service: light.turn_off
             target: !input insectenlampen
-  # (Je voegt hier de seizoenslogica toe zoals je die al had, indien gewenst)
+
+      - conditions:
+          - condition: state
+            entity_id: !input vacation_mode
+            state: "off"
+          - condition: template
+            value_template: >
+              {% set temp = state_attr(weersensor_var, 'temperature') %}
+              {{ temp is number and temp > min_temp_var and temp < max_temp_var }}
+          - condition: template
+            value_template: >
+              {% set vocht = state_attr(weersensor_var, 'humidity') %}
+              {{ vocht is number and vocht > min_humidity_var }}
+          - condition: template
+            value_template: >
+              {% set regen = state_attr(weersensor_var, 'precipitation') | float(0) %}
+              {{ regen < max_rain_var }}
+        sequence:
+          # Hier komt alle bestaande seizoenslogica in exact dezelfde structuur zoals jij eerder had
+          # [GEKOPIEERDE choose-structuur van seizoensstanden met cycli, delay, etc.]
+
+    default:
+      - service: light.turn_off
+        target: !input insectenlampen
 
 mode: restart
