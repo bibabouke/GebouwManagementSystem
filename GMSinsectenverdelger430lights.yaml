@@ -2,8 +2,7 @@ blueprint:
   name: GMS Insecten Verdelging v4.33lights+override
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
-    Regen wordt betrouwbaar geïnterpreteerd, ook als de waarde ontbreekt (None = 0).
-    Nieuw: handmatige override met afstandsbediening.
+    Inclusief handmatige override via Hue-knop.
   domain: automation
   input:
     insectenlampen:
@@ -20,18 +19,6 @@ blueprint:
         entity:
           domain: weather
 
-    vacation_mode:
-      name: Vakantiemodus
-      selector:
-        entity:
-          domain: input_boolean
-
-    seizoensmodus:
-      name: Seizoensmodus
-      selector:
-        entity:
-          domain: input_select
-
     min_temp:
       name: Minimale Temperatuur
       default: 13
@@ -39,7 +26,7 @@ blueprint:
         number:
           min: 0
           max: 25
-          unit_of_measurement: '°C'
+          unit_of_measurement: "°C"
 
     max_temp:
       name: Maximale Temperatuur
@@ -48,7 +35,7 @@ blueprint:
         number:
           min: 25
           max: 40
-          unit_of_measurement: '°C'
+          unit_of_measurement: "°C"
 
     min_humidity:
       name: Minimale Luchtvochtigheid
@@ -67,6 +54,18 @@ blueprint:
           min: 0
           max: 2
           unit_of_measurement: "mm/h"
+
+    vacation_mode:
+      name: Vakantieschakelaar
+      selector:
+        entity:
+          domain: input_boolean
+
+    seizoensmodus:
+      name: Seizoensmodus
+      selector:
+        entity:
+          domain: input_select
 
     insect_lamp_duration_summer:
       name: Zomer - Tijd aan (minuten)
@@ -177,30 +176,28 @@ blueprint:
           unit_of_measurement: "minuten"
 
     override_device:
-      name: Afstandsbediening (optioneel)
-      default: ''
+      name: Override-knop (Hue afstandsbediening)
       selector:
         device:
-          filter:
-            - integration: hue
+          integration: hue
 
     override_button:
-      name: Knopnummer (1-4)
-      default: '1'
+      name: Knopnummer voor override (1–4)
+      default: "1"
       selector:
         select:
           options:
-            - '1'
-            - '2'
-            - '3'
-            - '4'
+            - "1"
+            - "2"
+            - "3"
+            - "4"
 
     override_duration:
-      name: Override duur (minuten)
+      name: Duur override (minuten)
       default: 60
       selector:
         number:
-          min: 10
+          min: 5
           max: 180
           unit_of_measurement: "minuten"
 
@@ -217,16 +214,15 @@ trigger:
     subtype: !input override_button
 
 variables:
-  weersensor_var: !input weersensor
-  max_rain_var: !input max_rain
-  min_temp_var: !input min_temp
-  max_temp_var: !input max_temp
-  min_humidity_var: !input min_humidity
-  vacation_var: !input vacation_mode
-  seizoensmodus_var: "{{ states(!input seizoensmodus) }}"
-  override_duration_var: !input override_duration
+  weersensor_var: "{{ states[inputs.weersensor] }}"
+  max_rain_var: {{ inputs.max_rain }}
+  min_temp_var: {{ inputs.min_temp }}
+  max_temp_var: {{ inputs.max_temp }}
+  min_humidity_var: {{ inputs.min_humidity }}
+  vacation_var: "{{ states[inputs.vacation_mode] }}"
+  seizoensmodus_var: "{{ states[inputs.seizoensmodus] }}"
 
-condition: []
+condition: []  # Voorwaardeverwerking gebeurt binnen choose
 
 action:
   - choose:
@@ -237,7 +233,7 @@ action:
           - service: light.turn_on
             target: !input insectenlampen
           - delay:
-              minutes: "{{ override_duration_var }}"
+              minutes: !input override_duration
           - service: light.turn_off
             target: !input insectenlampen
 
