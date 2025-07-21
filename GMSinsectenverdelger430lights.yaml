@@ -1,5 +1,5 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.34lights+override
+  name: GMS Insecten Verdelging v4.35lights+override
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
     Inclusief handmatige override via Hue-knop.
@@ -214,15 +214,13 @@ trigger:
     subtype: !input override_button
 
 variables:
-  weersensor_var: "{{ states[inputs.weersensor] }}"
-  max_rain_var: {{ inputs.max_rain }}
-  min_temp_var: {{ inputs.min_temp }}
-  max_temp_var: {{ inputs.max_temp }}
-  min_humidity_var: {{ inputs.min_humidity }}
-  vacation_var: "{{ states[inputs.vacation_mode] }}"
-  seizoensmodus_var: "{{ states[inputs.seizoensmodus] }}"
-
-condition: []  # Voorwaardeverwerking gebeurt binnen choose
+  weersensor_var: !input weersensor
+  max_rain_var: !input max_rain
+  min_temp_var: !input min_temp
+  max_temp_var: !input max_temp
+  min_humidity_var: !input min_humidity
+  vacation_var: !input vacation_mode
+  seizoensmodus_var: !input seizoensmodus
 
 action:
   - choose:
@@ -236,7 +234,6 @@ action:
               minutes: !input override_duration
           - service: light.turn_off
             target: !input insectenlampen
-
       - conditions:
           - condition: state
             entity_id: !input vacation_mode
@@ -257,7 +254,7 @@ action:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ seizoensmodus_var == 'Zomerstand' }}"
+                    value_template: "{{ states(seizoensmodus_var) == 'Zomerstand' }}"
                 sequence:
                   - service: light.turn_on
                     target: !input insectenlampen
@@ -276,10 +273,9 @@ action:
                             minutes: !input insect_lamp_duration_summer
                         - service: light.turn_off
                           target: !input insectenlampen
-
               - conditions:
                   - condition: template
-                    value_template: "{{ seizoensmodus_var == 'Winterstand' }}"
+                    value_template: "{{ states(seizoensmodus_var) == 'Winterstand' }}"
                 sequence:
                   - service: light.turn_on
                     target: !input insectenlampen
@@ -298,10 +294,9 @@ action:
                             minutes: !input insect_lamp_duration_winter
                         - service: light.turn_off
                           target: !input insectenlampen
-
               - conditions:
                   - condition: template
-                    value_template: "{{ seizoensmodus_var == 'Herfststand' }}"
+                    value_template: "{{ states(seizoensmodus_var) == 'Herfststand' }}"
                 sequence:
                   - service: light.turn_on
                     target: !input insectenlampen
@@ -320,10 +315,9 @@ action:
                             minutes: !input insect_lamp_duration_herfst
                         - service: light.turn_off
                           target: !input insectenlampen
-
               - conditions:
                   - condition: template
-                    value_template: "{{ seizoensmodus_var == 'Lentestand' }}"
+                    value_template: "{{ states(seizoensmodus_var) == 'Lentestand' }}"
                 sequence:
                   - service: light.turn_on
                     target: !input insectenlampen
