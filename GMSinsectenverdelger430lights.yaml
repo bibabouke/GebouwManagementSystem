@@ -1,9 +1,9 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.30lights
+  name: GMS Insecten Verdelging v4.31lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
     Regen wordt betrouwbaar geïnterpreteerd, ook als de waarde ontbreekt of onbekend is (None = 0).
-    Deze versie gebruikt 'variables' en veilige templates voor weerdata.  
+    Toegevoegd: override via afstandsbediening (lampen handmatig aan voor instelbare tijd).
 
   domain: automation
   input:
@@ -178,12 +178,39 @@ blueprint:
           max: 90
           unit_of_measurement: "minuten"
 
+    override_duration:
+      name: Override-tijd (minuten)
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: "minuten"
+
+    override_event_id:
+      name: Event ID van de knop
+      description: Geef de event-id op van de knop, bv: hue_dimmer_switch_2_button_1
+      default: hue_dimmer_switch_2_button_1
+      selector:
+        text:
+
+    override_event_code:
+      name: Event-code van de knop
+      description: Meestal 1002 voor enkelklik
+      default: 1002
+      selector:
+        number:
+          min: 1000
+          max: 4000
+
 trigger:
   - platform: time
     at: "00:00:00"
   - platform: time_pattern
     hours: "/2"
     minutes: 0
+  - platform: event
+    event_type: hue_event
 
 variables:
   weersensor_var: !input weersensor
@@ -192,29 +219,52 @@ variables:
   max_temp_var: !input max_temp
   min_humidity_var: !input min_humidity
   vacation_var: !input vacation_mode
+  override_event_id_var: !input override_event_id
+  override_event_code_var: !input override_event_code
 
 condition:
-  - condition: state
-    entity_id: !input vacation_mode
-    state: "off"
+  - condition: or
+    conditions:
+      - condition: and
+        conditions:
+          - condition: state
+            entity_id: !input vacation_mode
+            state: "off"
+          - condition: template
+            value_template: >
+              {% set temp = state_attr(weersensor_var, 'temperature') %}
+              {{ temp is number and temp > min_temp_var and temp < max_temp_var }}
+          - condition: template
+            value_template: >
+              {% set vocht = state_attr(weersensor_var, 'humidity') %}
+              {{ vocht is number and vocht > min_humidity_var }}
+          - condition: template
+            value_template: >
+              {% set regen = state_attr(weersensor_var, 'precipitation') | float(0) %}
+              {{ regen < max_rain_var }}
 
-  - condition: template
-    value_template: >
-      {% set temp = state_attr(weersensor_var, 'temperature') %}
-      {{ temp is number and temp > min_temp_var and temp < max_temp_var }}
-
-  - condition: template
-    value_template: >
-      {% set vocht = state_attr(weersensor_var, 'humidity') %}
-      {{ vocht is number and vocht > min_humidity_var }}
-
-  - condition: template
-    value_template: >
-      {% set regen = state_attr(weersensor_var, 'precipitation') | float(0) %}
-      {{ regen < max_rain_var }}
+      - condition: template
+        value_template: >
+          {{ trigger.platform == 'event' and
+             trigger.event.data.id == override_event_id_var and
+             trigger.event.data.event == override_event_code_var }}
 
 action:
   - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.platform == 'event' and
+                 trigger.event.data.id == override_event_id_var and
+                 trigger.event.data.event == override_event_code_var }}
+        sequence:
+          - service: light.turn_on
+            target: !input insectenlampen
+          - delay:
+              minutes: !input override_duration
+          - service: light.turn_off
+            target: !input insectenlampen
+
       - conditions:
           - condition: template
             value_template: "{{ states('input_select.seizoensmodus') == 'Zomerstand' }}"
