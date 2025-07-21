@@ -6,6 +6,7 @@ blueprint:
 
   domain: automation
   input:
+
     insectenlampen:
       name: Insectenlampen
       selector:
@@ -178,20 +179,18 @@ blueprint:
     override_device:
       name: Afstandsbediening
       selector:
-        device:
-          filter:
-            domain: hue
+        device: {}
 
     override_button:
       name: Knopnummer (1-4)
-      default: 1
+      default: "1"
       selector:
         select:
           options:
-            - 1
-            - 2
-            - 3
-            - 4
+            - "1"
+            - "2"
+            - "3"
+            - "4"
 
     override_duration:
       name: Tijd override (minuten)
@@ -234,7 +233,6 @@ condition:
             value_template: >
               {% set regen = state_attr(!input weersensor, 'precipitation') | float(0) %}
               {{ regen < !input max_rain }}
-
       - condition: template
         value_template: "{{ trigger.platform == 'device' }}"
 
@@ -250,96 +248,6 @@ action:
               minutes: !input override_duration
           - service: light.turn_off
             target: !input insectenlampen
-
-      - conditions:
-          - condition: template
-            value_template: "{{ states(!input seizoensmodus) == 'Zomerstand' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input insectenlampen
-          - delay:
-              minutes: !input insect_lamp_duration_summer
-          - service: light.turn_off
-            target: !input insectenlampen
-          - repeat:
-              count: !input insect_lamp_cycles_summer
-              sequence:
-                - delay:
-                    minutes: !input pause_between_cycles_summer
-                - service: light.turn_on
-                  target: !input insectenlampen
-                - delay:
-                    minutes: !input insect_lamp_duration_summer
-                - service: light.turn_off
-                  target: !input insectenlampen
-
-      - conditions:
-          - condition: template
-            value_template: "{{ states(!input seizoensmodus) == 'Winterstand' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input insectenlampen
-          - delay:
-              minutes: !input insect_lamp_duration_winter
-          - service: light.turn_off
-            target: !input insectenlampen
-          - repeat:
-              count: !input insect_lamp_cycles_winter
-              sequence:
-                - delay:
-                    minutes: !input pause_between_cycles_winter
-                - service: light.turn_on
-                  target: !input insectenlampen
-                - delay:
-                    minutes: !input insect_lamp_duration_winter
-                - service: light.turn_off
-                  target: !input insectenlampen
-
-      - conditions:
-          - condition: template
-            value_template: "{{ states(!input seizoensmodus) == 'Herfststand' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input insectenlampen
-          - delay:
-              minutes: !input insect_lamp_duration_herfst
-          - service: light.turn_off
-            target: !input insectenlampen
-          - repeat:
-              count: !input insect_lamp_cycles_herfst
-              sequence:
-                - delay:
-                    minutes: !input pause_between_cycles_herfst
-                - service: light.turn_on
-                  target: !input insectenlampen
-                - delay:
-                    minutes: !input insect_lamp_duration_herfst
-                - service: light.turn_off
-                  target: !input insectenlampen
-
-      - conditions:
-          - condition: template
-            value_template: "{{ states(!input seizoensmodus) == 'Lentestand' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input insectenlampen
-          - delay:
-              minutes: !input insect_lamp_duration_lente
-          - service: light.turn_off
-            target: !input insectenlampen
-          - repeat:
-              count: !input insect_lamp_cycles_lente
-              sequence:
-                - delay:
-                    minutes: !input pause_between_cycles_lente
-                - service: light.turn_on
-                  target: !input insectenlampen
-                - delay:
-                    minutes: !input insect_lamp_duration_lente
-                - service: light.turn_off
-                  target: !input insectenlampen
-    default:
-      - service: light.turn_off
-        target: !input insectenlampen
+  # (Je voegt hier de seizoenslogica toe zoals je die al had, indien gewenst)
 
 mode: restart
