@@ -2,14 +2,12 @@ blueprint:
   name: GMS Insecten Verdelging v4.32lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
-    Regen wordt betrouwbaar geïnterpreteerd, ook als de waarde ontbreekt of onbekend is (None = 0).
-    Toegevoegd: override via afstandsbediening (lampen handmatig aan voor instelbare tijd).
+    Toegevoegd: handmatige override via afstandsbediening (device trigger).
 
   domain: automation
   input:
     insectenlampen:
       name: Insectenlampen
-      description: Selecteer de insectenlampen die je wilt aansturen (alleen lights).
       selector:
         target:
           entity:
@@ -17,7 +15,6 @@ blueprint:
 
     weersensor:
       name: Weersensor
-      description: Selecteer de weersensor die temperatuur, luchtvochtigheid en regen meet.
       selector:
         entity:
           domain: weather
@@ -71,7 +68,7 @@ blueprint:
           domain: input_select
 
     insect_lamp_duration_summer:
-      name: "Zomer – Tijd aan (minuten)"
+      name: Zomer - Tijd aan (minuten)
       default: 15
       selector:
         number:
@@ -80,7 +77,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_cycles_summer:
-      name: "Zomer – Aantal cycli"
+      name: Zomer - Aantal cycli
       default: 4
       selector:
         number:
@@ -89,7 +86,7 @@ blueprint:
           unit_of_measurement: "cycli"
 
     pause_between_cycles_summer:
-      name: "Zomer – Pauze (minuten)"
+      name: Zomer - Pauze (minuten)
       default: 30
       selector:
         number:
@@ -98,7 +95,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_duration_winter:
-      name: "Winter – Tijd aan (minuten)"
+      name: Winter - Tijd aan (minuten)
       default: 10
       selector:
         number:
@@ -107,7 +104,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_cycles_winter:
-      name: "Winter – Aantal cycli"
+      name: Winter - Aantal cycli
       default: 2
       selector:
         number:
@@ -116,7 +113,7 @@ blueprint:
           unit_of_measurement: "cycli"
 
     pause_between_cycles_winter:
-      name: "Winter – Pauze (minuten)"
+      name: Winter - Pauze (minuten)
       default: 60
       selector:
         number:
@@ -125,7 +122,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_duration_herfst:
-      name: "Herfst – Tijd aan (minuten)"
+      name: Herfst - Tijd aan (minuten)
       default: 9
       selector:
         number:
@@ -134,7 +131,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_cycles_herfst:
-      name: "Herfst – Aantal cycli"
+      name: Herfst - Aantal cycli
       default: 2
       selector:
         number:
@@ -143,7 +140,7 @@ blueprint:
           unit_of_measurement: "cycli"
 
     pause_between_cycles_herfst:
-      name: "Herfst – Pauze (minuten)"
+      name: Herfst - Pauze (minuten)
       default: 45
       selector:
         number:
@@ -152,7 +149,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_duration_lente:
-      name: "Lente – Tijd aan (minuten)"
+      name: Lente - Tijd aan (minuten)
       default: 12
       selector:
         number:
@@ -161,7 +158,7 @@ blueprint:
           unit_of_measurement: "minuten"
 
     insect_lamp_cycles_lente:
-      name: "Lente – Aantal cycli"
+      name: Lente - Aantal cycli
       default: 3
       selector:
         number:
@@ -170,7 +167,7 @@ blueprint:
           unit_of_measurement: "cycli"
 
     pause_between_cycles_lente:
-      name: "Lente – Pauze (minuten)"
+      name: Lente - Pauze (minuten)
       default: 45
       selector:
         number:
@@ -178,8 +175,26 @@ blueprint:
           max: 90
           unit_of_measurement: "minuten"
 
+    override_device:
+      name: Afstandsbediening
+      selector:
+        device:
+          filter:
+            domain: hue
+
+    override_button:
+      name: Knopnummer (1-4)
+      default: 1
+      selector:
+        select:
+          options:
+            - 1
+            - 2
+            - 3
+            - 4
+
     override_duration:
-      name: Override-tijd (minuten)
+      name: Tijd override (minuten)
       default: 10
       selector:
         number:
@@ -187,40 +202,17 @@ blueprint:
           max: 60
           unit_of_measurement: "minuten"
 
-    override_event_id:
-      name: Event-ID van de knop
-      description: "Geef de event-id op van de knop, bv: hue_dimmer_switch_2_button_1"
-      default: hue_dimmer_switch_2_button_1
-      selector:
-        text:
-
-    override_event_code:
-      name: Event-code van de knop
-      description: "Meestal 1002 voor enkelklik"
-      default: 1002
-      selector:
-        number:
-          min: 1000
-          max: 4000
-
 trigger:
   - platform: time
     at: "00:00:00"
   - platform: time_pattern
     hours: "/2"
     minutes: 0
-  - platform: event
-    event_type: hue_event
-
-variables:
-  weersensor_var: !input weersensor
-  max_rain_var: !input max_rain
-  min_temp_var: !input min_temp
-  max_temp_var: !input max_temp
-  min_humidity_var: !input min_humidity
-  vacation_var: !input vacation_mode
-  override_event_id_var: !input override_event_id
-  override_event_code_var: !input override_event_code
+  - platform: device
+    device_id: !input override_device
+    domain: hue
+    type: initial_press
+    subtype: !input override_button
 
 condition:
   - condition: or
@@ -232,31 +224,25 @@ condition:
             state: "off"
           - condition: template
             value_template: >
-              {% set temp = state_attr(weersensor_var, 'temperature') %}
-              {{ temp is number and temp > min_temp_var and temp < max_temp_var }}
+              {% set temp = state_attr(!input weersensor, 'temperature') %}
+              {{ temp is number and temp > !input min_temp and temp < !input max_temp }}
           - condition: template
             value_template: >
-              {% set vocht = state_attr(weersensor_var, 'humidity') %}
-              {{ vocht is number and vocht > min_humidity_var }}
+              {% set vocht = state_attr(!input weersensor, 'humidity') %}
+              {{ vocht is number and vocht > !input min_humidity }}
           - condition: template
             value_template: >
-              {% set regen = state_attr(weersensor_var, 'precipitation') | float(0) %}
-              {{ regen < max_rain_var }}
+              {% set regen = state_attr(!input weersensor, 'precipitation') | float(0) %}
+              {{ regen < !input max_rain }}
 
       - condition: template
-        value_template: >
-          {{ trigger.platform == 'event' and
-             trigger.event.data.id == override_event_id_var and
-             trigger.event.data.event == override_event_code_var }}
+        value_template: "{{ trigger.platform == 'device' }}"
 
 action:
   - choose:
       - conditions:
           - condition: template
-            value_template: >
-              {{ trigger.platform == 'event' and
-                 trigger.event.data.id == override_event_id_var and
-                 trigger.event.data.event == override_event_code_var }}
+            value_template: "{{ trigger.platform == 'device' }}"
         sequence:
           - service: light.turn_on
             target: !input insectenlampen
@@ -267,7 +253,7 @@ action:
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Zomerstand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Zomerstand' }}"
         sequence:
           - service: light.turn_on
             target: !input insectenlampen
@@ -289,7 +275,7 @@ action:
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Winterstand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Winterstand' }}"
         sequence:
           - service: light.turn_on
             target: !input insectenlampen
@@ -311,7 +297,7 @@ action:
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Herfststand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Herfststand' }}"
         sequence:
           - service: light.turn_on
             target: !input insectenlampen
@@ -333,7 +319,7 @@ action:
 
       - conditions:
           - condition: template
-            value_template: "{{ states('input_select.seizoensmodus') == 'Lentestand' }}"
+            value_template: "{{ states(!input seizoensmodus) == 'Lentestand' }}"
         sequence:
           - service: light.turn_on
             target: !input insectenlampen
