@@ -1,5 +1,5 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.61lights
+  name: GMS Insecten Verdelging v4.62lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
     Toegevoegd: handmatige override via helper-schakelaar, met instelbare duur.
