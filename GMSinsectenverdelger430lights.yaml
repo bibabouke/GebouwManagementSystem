@@ -1,5 +1,5 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.45lights
+  name: GMS Insecten Verdelging v4.46lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
     Inclusief handmatige override via een geselecteerde Hue-knop.
@@ -199,19 +199,18 @@ blueprint:
           max: 180
           unit_of_measurement: "minuten"
 
-trigger:
+triggers:
   - platform: time
     at: "00:00:00"
-
   - platform: time_pattern
     hours: "/2"
     minutes: 0
-
-  - platform: device
-    device_id: !input override_device
-    domain: hue
-    type: remote_button_short_release
-    subtype: !input override_event_code
+  - platform: event
+    event_type: hue_event
+    event_data:
+      device_id: !input override_device
+      type: short_release
+      subtype: !input override_event_code
 
 variables:
   weersensor_var: !input weersensor
