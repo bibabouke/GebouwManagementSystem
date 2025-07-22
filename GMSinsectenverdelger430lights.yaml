@@ -1,5 +1,5 @@
 blueprint:
-  name: GMS Insecten Verdelging v4.46lights
+  name: GMS Insecten Verdelging v4.47lights
   description: >
     Automatische bediening van insectenlampen op basis van seizoensmodi en weersomstandigheden.
     Inclusief handmatige override via een geselecteerde Hue-knop.
@@ -188,8 +188,11 @@ blueprint:
       name: Gebeurteniscode knop (bijv. "1002")
       default: "1002"
       selector:
-        text:
-
+        number:
+          min: 1
+          max: 4
+          mode: box
+                 
     override_duration:
       name: Duur handmatige override (minuten)
       default: 60
