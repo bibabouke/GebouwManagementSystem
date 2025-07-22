@@ -35,12 +35,14 @@ blueprint:
       name: Override knop (apparaat)
       selector:
         device:
-
+    
     override_button:
-      name: Knopnummer op apparaat (zoals '1' of '2')
+      name: Knopnummer op apparaat (zoals '1', '2', '3', '4')
+      default: "1"
       selector:
-        number:
-
+        text:
+          multiline: false
+        
     override_duration:
       name: Duur handmatige override (minuten)
       default: 60
