@@ -1,9 +1,10 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.0FAN
+  name: Afzuiginstallatie Temperatuurregeling v2.2FANdirClean
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een fan-entiteit (bijv. Zigbee-ventilator met snelheidsregeling).
     Alleen actief als buitenlucht koeler is dan binnenlucht én temperatuur boven richtpunt ligt.
+    Je kunt kiezen of de ventilator lucht naar binnen (verwarmen) of naar buiten (koelen) blaast.
 
   domain: automation
 
@@ -48,6 +49,21 @@ blueprint:
         entity:
           domain: fan
 
+    fan_direction:
+      name: "Ventilatorrichting (verwarmen of koelen)"
+      description: >
+        Kies de draairichting van de ventilator.  
+        'Forward' = lucht blazen richting kamer (verwarmen).  
+        'Reverse' = lucht aanzuigen vanaf buiten (koelen).
+      default: reverse
+      selector:
+        select:
+          options:
+            - label: "Koelen (lucht aanzuigen van buiten)"
+              value: reverse
+            - label: "Verwarmen (lucht naar binnen blazen)"
+              value: forward
+
     richttemperatuur:
       name: "Richttemperatuur binnen"
       default: 21.0
@@ -87,6 +103,7 @@ actions:
       afzuiginstallatie_fan_id: !input afzuiginstallatie_fan
       richt: !input richttemperatuur
       marge: !input hysteresis
+      richting: !input fan_direction
 
       binnen: >
         {{ states(binnen_temp_sensor_id) | float(0) }}
@@ -115,7 +132,14 @@ actions:
         Buiten: {{ buiten }}°C,
         Verschil: {{ verschil }}°C,
         Richt: {{ richt }}°C,
-        Controlebinnen: {{ controlebinnen }}°C
+        Controlebinnen: {{ controlebinnen }}°C,
+        Richting: {{ richting }}
+
+  - service: fan.set_direction
+    target:
+      entity_id: "{{ afzuiginstallatie_fan_id }}"
+    data:
+      direction: "{{ richting }}"
 
   - choose:
       - conditions:
