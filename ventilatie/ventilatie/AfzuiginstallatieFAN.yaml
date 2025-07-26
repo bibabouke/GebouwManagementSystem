@@ -1,13 +1,12 @@
-# Afzuiginstallatie Temperatuurregeling v2.7FANdirClean
+# Afzuiginstallatie Temperatuurregeling v2.8FANdirClean
 # ----------------------------------------------------
-# Toegevoegd in v2.7:
-# - Override-knop ondersteunt nu meerdere typen (input_boolean, switch, binary_sensor, sensor)
-# - Je kunt nu ook een virtuele schakelaar gebruiken als override-trigger
-# - Alles verder ongewijzigd t.o.v. v2.6
+# ✔ override_knop hernoemd naar override_switch
+# ✔ override_switch accepteert alleen input_boolean (zoals bedoeld)
+# ✔ functionaliteit en logica ongewijzigd t.o.v. v2.7
 
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.7FANdirClean
-  description: Regelt afzuiging op basis van binnen- en buitentemperatuur, met handmatige override.
+  name: Afzuiginstallatie Temperatuurregeling v2.8FANdirClean
+  description: Regelt afzuiging op basis van temperatuur met handmatige override via virtuele schakelaar.
   domain: automation
 
   input:
@@ -64,15 +63,12 @@ blueprint:
             - forward
             - reverse
 
-    override_knop:
-      name: Override knop (HUE of virtuele schakelaar)
+    override_switch:
+      name: Virtuele Override Schakelaar
+      description: Een input_boolean die de automatische regeling tijdelijk uitschakelt.
       selector:
         entity:
-          domain:
-            - sensor
-            - binary_sensor
-            - input_boolean
-            - switch
+          domain: input_boolean
 
     override_duration:
       name: Override-duur (uren)
@@ -99,7 +95,8 @@ trigger:
     for: "00:01:00"
 
   - platform: state
-    entity_id: !input override_knop
+    entity_id: !input override_switch
+    to: "on"
 
 variables:
   fan_id: !input fan
@@ -127,7 +124,7 @@ action:
   - choose:
       - conditions:
           - condition: state
-            entity_id: !input override_knop
+            entity_id: !input override_switch
             state: "on"
         sequence:
           - service: light.turn_on
@@ -140,6 +137,9 @@ action:
               entity_id: !input flash_lamp
           - delay:
               hours: !input override_duration
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input override_switch
 
   - service: system_log.write
     data:
