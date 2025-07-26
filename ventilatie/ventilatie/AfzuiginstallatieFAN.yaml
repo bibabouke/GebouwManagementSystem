@@ -1,12 +1,11 @@
-# Afzuiginstallatie Temperatuurregeling v2.8FANdirClean
+# Afzuiginstallatie Temperatuurregeling v2.9FANdirClean
 # ----------------------------------------------------
-# ✔ override_knop hernoemd naar override_switch
-# ✔ override_switch accepteert alleen input_boolean (zoals bedoeld)
-# ✔ functionaliteit en logica ongewijzigd t.o.v. v2.7
+# Toegevoegd in v2.9:
+# - Flashlamp gebruikt nu handmatige sequentie voor bredere compatibiliteit
 
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.8FANdirClean
-  description: Regelt afzuiging op basis van temperatuur met handmatige override via virtuele schakelaar.
+  name: Afzuiginstallatie Temperatuurregeling v2.9FANdirClean
+  description: Regelt afzuiging op basis van binnen- en buitentemperatuur, met handmatige override.
   domain: automation
 
   input:
@@ -63,12 +62,15 @@ blueprint:
             - forward
             - reverse
 
-    override_switch:
-      name: Virtuele Override Schakelaar
-      description: Een input_boolean die de automatische regeling tijdelijk uitschakelt.
+    override_knop:
+      name: Override knop (HUE of virtuele schakelaar)
       selector:
         entity:
-          domain: input_boolean
+          domain:
+            - sensor
+            - binary_sensor
+            - input_boolean
+            - switch
 
     override_duration:
       name: Override-duur (uren)
@@ -95,8 +97,7 @@ trigger:
     for: "00:01:00"
 
   - platform: state
-    entity_id: !input override_switch
-    to: "on"
+    entity_id: !input override_knop
 
 variables:
   fan_id: !input fan
@@ -124,22 +125,33 @@ action:
   - choose:
       - conditions:
           - condition: state
-            entity_id: !input override_switch
+            entity_id: !input override_knop
             state: "on"
         sequence:
           - service: light.turn_on
             target:
               entity_id: !input flash_lamp
+            data:
+              brightness_pct: 100
           - delay:
-              seconds: 1
+              milliseconds: 500
+          - service: light.turn_off
+            target:
+              entity_id: !input flash_lamp
+          - delay:
+              milliseconds: 300
+          - service: light.turn_on
+            target:
+              entity_id: !input flash_lamp
+            data:
+              brightness_pct: 100
+          - delay:
+              milliseconds: 500
           - service: light.turn_off
             target:
               entity_id: !input flash_lamp
           - delay:
               hours: !input override_duration
-          - service: input_boolean.turn_off
-            target:
-              entity_id: !input override_switch
 
   - service: system_log.write
     data:
