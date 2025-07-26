@@ -1,10 +1,11 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.2FANdirClean
+  name: Afzuiginstallatie Temperatuurregeling v2.3FANdirStable
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een fan-entiteit (bijv. Zigbee-ventilator met snelheidsregeling).
     Alleen actief als buitenlucht koeler is dan binnenlucht én temperatuur boven richtpunt ligt.
     Je kunt kiezen of de ventilator lucht naar binnen (verwarmen) of naar buiten (koelen) blaast.
+    Versie v2.3 bevat verbeterde stabiliteit: hysterese bij uitschakelen + delay na uitschakeling.
 
   domain: automation
 
@@ -178,10 +179,11 @@ actions:
       - conditions:
           - condition: template
             value_template: >
-              {{ verschil <= 0 or buiten >= controlebinnen or binnen <= richt }}
+              {{ verschil <= 0 or buiten >= controlebinnen or binnen <= (richt - marge) }}
         sequence:
           - service: fan.turn_off
             target:
               entity_id: "{{ afzuiginstallatie_fan_id }}"
+          - delay: "00:03:00"
 
 mode: single
