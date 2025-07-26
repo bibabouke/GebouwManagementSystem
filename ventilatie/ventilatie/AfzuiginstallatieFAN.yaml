@@ -1,22 +1,12 @@
-# Afzuiginstallatie Temperatuurregeling v2.6FANdirClean
+# Afzuiginstallatie Temperatuurregeling v2.7FANdirClean
 # ----------------------------------------------------
-# Toegevoegd in v2.6:
-# - Tijdelijke override via HUE-knop voorkomt werking automatisering
-# - Instelbare override-duur in uren
-# - Flash van signaallamp ter bevestiging van override-activering
-# - Tijdens override kun je de ventilator handmatig bedienen zonder dat het script ingrijpt
-
-# Tijdens override:
-# - De ventilator blijft uit of aan zoals je hem handmatig zet
-# - Automatisering schakelt niets in of uit
-# - Pas na afloop override-duur hervat normale werking
-
-# Let op: er zijn nu twee override-mechanismen:
-# 1. Automatische override via voorwaarden (buiten/binnen temp etc.)
-# 2. Handmatige override via knop (HUE-afstandsbediening)
+# Toegevoegd in v2.7:
+# - Override-knop ondersteunt nu meerdere typen (input_boolean, switch, binary_sensor, sensor)
+# - Je kunt nu ook een virtuele schakelaar gebruiken als override-trigger
+# - Alles verder ongewijzigd t.o.v. v2.6
 
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.6FANdirClean
+  name: Afzuiginstallatie Temperatuurregeling v2.7FANdirClean
   description: Regelt afzuiging op basis van binnen- en buitentemperatuur, met handmatige override.
   domain: automation
 
@@ -75,10 +65,14 @@ blueprint:
             - reverse
 
     override_knop:
-      name: Override knop (HUE)
+      name: Override knop (HUE of virtuele schakelaar)
       selector:
         entity:
-          domain: sensor
+          domain:
+            - sensor
+            - binary_sensor
+            - input_boolean
+            - switch
 
     override_duration:
       name: Override-duur (uren)
@@ -139,14 +133,11 @@ action:
           - service: light.turn_on
             target:
               entity_id: !input flash_lamp
-              
           - delay:
               seconds: 1
-
           - service: light.turn_off
             target:
               entity_id: !input flash_lamp
-
           - delay:
               hours: !input override_duration
 
