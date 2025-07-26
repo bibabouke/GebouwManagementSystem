@@ -1,18 +1,16 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.3FANdirStable
+  name: Afzuiginstallatie Temperatuurregeling v2.4FANdirStable
   description: >
     Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
     Werkt met een fan-entiteit (bijv. Zigbee-ventilator met snelheidsregeling).
     Alleen actief als buitenlucht koeler is dan binnenlucht én temperatuur boven richtpunt ligt.
-    Je kunt kiezen of de ventilator lucht naar binnen (verwarmen) of naar buiten (koelen) blaast.
-    Versie v2.3 bevat verbeterde stabiliteit: hysterese bij uitschakelen + delay na uitschakeling.
-
+    Draairichting bepaalt of geventileerd wordt voor koeling (reverse) of verwarming (forward).
+    Bij reverse wordt maximaal 50% gebruikt. Minimale draaitijd voor uitschakeling: 5 minuten.
   domain: automation
 
   input:
     binnen_temp_sensor:
       name: "Primaire Binnentemperatuursensor"
-      description: "Sensor voor de temperatuur in de ruimte die wordt afgevoerd."
       selector:
         entity:
           domain: sensor
@@ -20,9 +18,6 @@ blueprint:
 
     controle_binnen_sensor:
       name: "Vergelijkingssensor Binnen (optioneel)"
-      description: >
-        Sensor voor andere binnenruimte (bijv. woonkamer), zodat er geen warme buitenlucht
-        wordt aangezogen als het buiten warmer is dan binnen.
       default: ""
       selector:
         entity:
@@ -31,31 +26,24 @@ blueprint:
 
     buiten_temp_sensor:
       name: "Buitentemperatuursensor"
-      description: "Sensor of weersensor met buitentemperatuur in een attribuut of state."
       selector:
         entity:
           domain: sensor
 
     buiten_temp_attribute:
       name: "Optioneel: Attribuut voor buitentemperatuur"
-      description: "Laat leeg als de sensor de temperatuur direct als state bevat."
       default: ""
       selector:
         text:
 
     afzuiginstallatie_fan:
       name: "Afzuiginstallatie Ventilator"
-      description: "Ventilator-entiteit die de afzuiging aanstuurt via percentage."
       selector:
         entity:
           domain: fan
 
     fan_direction:
       name: "Ventilatorrichting (verwarmen of koelen)"
-      description: >
-        Kies de draairichting van de ventilator.  
-        'Forward' = lucht blazen richting kamer (verwarmen).  
-        'Reverse' = lucht aanzuigen vanaf buiten (koelen).
       default: reverse
       selector:
         select:
@@ -85,7 +73,7 @@ blueprint:
           step: 0.1
           unit_of_measurement: "°C"
 
-triggers:
+trigger:
   - platform: state
     entity_id: !input binnen_temp_sensor
     for: "00:01:00"
@@ -93,15 +81,15 @@ triggers:
     entity_id: !input buiten_temp_sensor
     for: "00:01:00"
 
-conditions: []
+condition: []
 
-actions:
+action:
   - variables:
+      fan_id: !input afzuiginstallatie_fan
       binnen_temp_sensor_id: !input binnen_temp_sensor
       buiten_temp_sensor_id: !input buiten_temp_sensor
       controle_binnen_sensor_id: !input controle_binnen_sensor
       buiten_temp_attr: !input buiten_temp_attribute
-      afzuiginstallatie_fan_id: !input afzuiginstallatie_fan
       richt: !input richttemperatuur
       marge: !input hysteresis
       richting: !input fan_direction
@@ -129,16 +117,12 @@ actions:
     data:
       level: info
       message: >
-        Afzuigcontrole uitgevoerd. Binnen: {{ binnen }}°C,
-        Buiten: {{ buiten }}°C,
-        Verschil: {{ verschil }}°C,
-        Richt: {{ richt }}°C,
-        Controlebinnen: {{ controlebinnen }}°C,
-        Richting: {{ richting }}
+        Afzuigcontrole: Binnen={{ binnen }}°C, Buiten={{ buiten }}°C, Verschil={{ verschil }}°C,
+        Richt={{ richt }}°C, Controlebinnen={{ controlebinnen }}°C, Richting={{ richting }}
 
   - service: fan.set_direction
     target:
-      entity_id: "{{ afzuiginstallatie_fan_id }}"
+      entity_id: "{{ fan_id }}"
     data:
       direction: "{{ richting }}"
 
@@ -150,9 +134,10 @@ actions:
         sequence:
           - service: fan.set_percentage
             target:
-              entity_id: "{{ afzuiginstallatie_fan_id }}"
+              entity_id: "{{ fan_id }}"
             data:
-              percentage: 100
+              percentage: >
+                {% if richting == 'reverse' %} 50 {% else %} 100 {% endif %}
 
       - conditions:
           - condition: template
@@ -161,9 +146,10 @@ actions:
         sequence:
           - service: fan.set_percentage
             target:
-              entity_id: "{{ afzuiginstallatie_fan_id }}"
+              entity_id: "{{ fan_id }}"
             data:
-              percentage: 66
+              percentage: >
+                {% if richting == 'reverse' %} 35 {% else %} 66 {% endif %}
 
       - conditions:
           - condition: template
@@ -172,18 +158,25 @@ actions:
         sequence:
           - service: fan.set_percentage
             target:
-              entity_id: "{{ afzuiginstallatie_fan_id }}"
+              entity_id: "{{ fan_id }}"
             data:
-              percentage: 33
+              percentage: >
+                {% if richting == 'reverse' %} 25 {% else %} 33 {% endif %}
 
       - conditions:
           - condition: template
             value_template: >
               {{ verschil <= 0 or buiten >= controlebinnen or binnen <= (richt - marge) }}
+          - condition: template
+            value_template: >
+              {{ state_attr(fan_id, 'percentage') | int(0) > 0 }}
+          - condition: template
+            value_template: >
+              {{ (now() - states[fan_id].last_changed).total_seconds() > 300 }}
         sequence:
           - service: fan.turn_off
             target:
-              entity_id: "{{ afzuiginstallatie_fan_id }}"
+              entity_id: "{{ fan_id }}"
           - delay: "00:03:00"
 
 mode: single
