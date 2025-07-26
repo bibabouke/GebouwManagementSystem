@@ -1,185 +1,186 @@
 blueprint:
-  name: Afzuiginstallatie Temperatuurregeling v2.4fandir Stable
+  name: Afzuiginstallatie Temperatuurregeling v2.5FANdirClean
   description: >
-    Regelt de afzuiginstallatie afhankelijk van temperatuurverschillen.
-    Werkt met een fan-entiteit (bijv. Zigbee-ventilator met snelheidsregeling).
-    Alleen actief als buitenlucht koeler is dan binnenlucht én temperatuur boven richtpunt ligt.
-    Je kunt kiezen of de ventilator lucht naar binnen (verwarmen) of naar buiten (koelen) blaast.
-
+    Automatische regeling van ventilator op basis van temperatuurverschillen binnen/buiten.
+    Inclusief ondersteuning voor handmatige override via een knop, instelbare override-duur (in uren),
+    en visuele feedback via signaallamp.
   domain: automation
 
   input:
-    binnen_temp_sensor:
-      name: "Primaire Binnentemperatuursensor"
-      description: "Sensor voor de temperatuur in de ruimte die wordt afgevoerd."
-      selector:
-        entity:
-          domain: sensor
-          device_class: temperature
-
-    controle_binnen_sensor:
-      name: "Vergelijkingssensor Binnen (optioneel)"
-      description: >
-        Sensor voor andere binnenruimte (bijv. woonkamer), zodat er geen warme buitenlucht
-        wordt aangezogen als het buiten warmer is dan binnen.
-      default: ""
-      selector:
-        entity:
-          domain: sensor
-          device_class: temperature
-
-    buiten_temp_sensor:
-      name: "Buitentemperatuursensor"
-      description: "Sensor of weersensor met buitentemperatuur in een attribuut of state."
-      selector:
-        entity:
-          domain: sensor
-
-    buiten_temp_attribute:
-      name: "Optioneel: Attribuut voor buitentemperatuur"
-      description: "Laat leeg als de sensor de temperatuur direct als state bevat."
-      default: ""
-      selector:
-        text:
-
     afzuiginstallatie_fan:
-      name: "Afzuiginstallatie Ventilator"
-      description: "Ventilator-entiteit die de afzuiging aanstuurt via percentage."
+      name: Afzuigventilator
       selector:
         entity:
           domain: fan
 
-    fan_direction:
-      name: "Ventilatorrichting (verwarmen of koelen)"
-      description: >
-        Kies de draairichting van de ventilator.  
-        'Forward' = lucht blazen richting kamer (verwarmen).  
-        'Reverse' = lucht aanzuigen vanaf buiten (koelen).
-      default: reverse
+    binnen_temp_sensor:
+      name: Binnentemperatuursensor
       selector:
-        select:
-          options:
-            - label: "Koelen (lucht aanzuigen van buiten)"
-              value: reverse
-            - label: "Verwarmen (lucht naar binnen blazen)"
-              value: forward
+        entity:
+          domain: sensor
 
-    richttemperatuur:
-      name: "Richttemperatuur binnen"
-      default: 21.0
+    buiten_temp_sensor:
+      name: Buitentemperatuursensor
+      selector:
+        entity:
+          domain: sensor
+
+    controle_binnen_sensor:
+      name: Tweede binnentemperatuursensor (voor buiten warmer check)
+      default: []
+      selector:
+        entity:
+          domain: sensor
+
+    override_switch:
+      name: Override-schakelaar (input_boolean)
+      selector:
+        entity:
+          domain: input_boolean
+
+    override_duration_hours:
+      name: Override-duur in uren
+      default: 2
       selector:
         number:
-          min: 10
+          min: 1
+          max: 24
+          unit_of_measurement: "uur"
+
+    override_button:
+      name: HUE-knop of andere drukknop
+      selector:
+        entity:
+          domain: sensor
+
+    signaallamp:
+      name: Signaallamp (knippert bij override)
+      selector:
+        entity:
+          domain: light
+
+    richttemperatuur:
+      name: Richttemperatuur binnen
+      default: 18.5
+      selector:
+        number:
+          min: 5
           max: 30
           step: 0.5
-          unit_of_measurement: "°C"
+          unit_of_measurement: '°C'
 
-    hysteresis:
-      name: "Hysteresis"
+    marge:
+      name: Marge rond richttemperatuur
       default: 0.5
       selector:
         number:
           min: 0.1
-          max: 5.0
+          max: 5
           step: 0.1
-          unit_of_measurement: "°C"
+          unit_of_measurement: '°C'
 
-triggers:
+trigger:
   - platform: state
     entity_id: !input binnen_temp_sensor
     for: "00:01:00"
   - platform: state
     entity_id: !input buiten_temp_sensor
     for: "00:01:00"
+  - platform: state
+    entity_id: !input override_button
 
-conditions: []
+variables:
+  fan_id: !input afzuiginstallatie_fan
+  binnen_temp_sensor_id: !input binnen_temp_sensor
+  buiten_temp_sensor_id: !input buiten_temp_sensor
+  controle_binnen_sensor_id: !input controle_binnen_sensor
+  override_switch_id: !input override_switch
+  override_duration_hours: !input override_duration_hours
+  richt: !input richttemperatuur
+  marge: !input marge
+  richting: reverse
+  binnen: >
+    {{ states(binnen_temp_sensor_id) | float(0) }}
+  buiten: >
+    {{ states(buiten_temp_sensor_id) | float(0) }}
+  controlebinnen: >
+    {% if controle_binnen_sensor_id %}
+      {{ states(controle_binnen_sensor_id) | float(21.0) }}
+    {% else %}
+      {{ 21.0 }}
+    {% endif %}
+  verschil: >
+    {{ binnen - buiten }}
 
-actions:
-  - variables:
-      fan_id: !input afzuiginstallatie_fan
-      binnen_temp_sensor_id: !input binnen_temp_sensor
-      buiten_temp_sensor_id: !input buiten_temp_sensor
-      controle_binnen_sensor_id: !input controle_binnen_sensor
-      buiten_temp_attr: !input buiten_temp_attribute
-      richt: !input richttemperatuur
-      marge: !input hysteresis
-      richting: !input fan_direction
+condition: []
 
-      binnen: >
-        {{ states(binnen_temp_sensor_id) | float(0) }}
-
-      buiten: >
-        {% if buiten_temp_attr %}
-          {{ state_attr(buiten_temp_sensor_id, buiten_temp_attr) | float(0) }}
-        {% else %}
-          {{ states(buiten_temp_sensor_id) | float(0) }}
-        {% endif %}
-
-      controlebinnen: >
-        {% if controle_binnen_sensor_id %}
-          {{ states(controle_binnen_sensor_id) | float(21.0) }}
-        {% else %}
-          {{ 21.0 }}
-        {% endif %}
-
-      verschil: "{{ binnen - buiten }}"
-
-  - service: system_log.write
-    data:
-      level: info
-      message: >
-        Afzuigcontrole: Binnen={{ binnen }}°C, Buiten={{ buiten }}°C, Verschil={{ verschil }}°C, Richt={{ richt }}°C, Controlebinnen={{ controlebinnen }}°C, Richting={{ richting }}
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: override_button
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input override_switch
+          - service: light.turn_on
+            target:
+              entity_id: !input signaallamp
+            data:
+              flash: short
+          - delay:
+              hours: !input override_duration_hours
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input override_switch
 
   - choose:
       - conditions:
+          - condition: state
+            entity_id: !input override_switch
+            state: "on"
+        sequence: []  # Override actief, niets doen
+
+      - conditions:
           - condition: template
-            value_template: "{{ not is_state(fan_id, 'off') }}"
+            value_template: "{{ binnen > richt + marge and buiten < controlebinnen }}"
         sequence:
           - service: fan.set_direction
-            target:
-              entity_id: "{{ fan_id }}"
             data:
               direction: "{{ richting }}"
-
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ verschil > 1.5 and buiten < controlebinnen and binnen > richt + marge }}"
-        sequence:
-          - condition: template
-            value_template: "{{ buiten < controlebinnen and verschil > 0 and binnen > richt + marge }}"
-          - service: fan.set_percentage
             target:
               entity_id: "{{ fan_id }}"
-            data:
-              percentage: >
-                {% if richting == 'reverse' %} 50 {% else %} 100 {% endif %}
 
-      - conditions:
-          - condition: template
-            value_template: "{{ verschil > 0.8 and verschil <= 1.5 and buiten < controlebinnen and binnen > richt + marge }}"
-        sequence:
-          - condition: template
-            value_template: "{{ buiten < controlebinnen and verschil > 0 and binnen > richt + marge }}"
-          - service: fan.set_percentage
-            target:
-              entity_id: "{{ fan_id }}"
-            data:
-              percentage: >
-                {% if richting == 'reverse' %} 35 {% else %} 66 {% endif %}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ verschil > 1.5 }}"
+                sequence:
+                  - service: fan.set_percentage
+                    data:
+                      percentage: "{% if richting == 'reverse' %} 50 {% else %} 100 {% endif %}"
+                    target:
+                      entity_id: "{{ fan_id }}"
 
-      - conditions:
-          - condition: template
-            value_template: "{{ verschil > 0 and verschil <= 0.8 and buiten < controlebinnen and binnen > richt + marge }}"
-        sequence:
-          - condition: template
-            value_template: "{{ buiten < controlebinnen and verschil > 0 and binnen > richt + marge }}"
-          - service: fan.set_percentage
-            target:
-              entity_id: "{{ fan_id }}"
-            data:
-              percentage: >
-                {% if richting == 'reverse' %} 25 {% else %} 33 {% endif %}
+              - conditions:
+                  - condition: template
+                    value_template: "{{ verschil > 0.8 and verschil <= 1.5 }}"
+                sequence:
+                  - service: fan.set_percentage
+                    data:
+                      percentage: "{% if richting == 'reverse' %} 35 {% else %} 66 {% endif %}"
+                    target:
+                      entity_id: "{{ fan_id }}"
+
+              - conditions:
+                  - condition: template
+                    value_template: "{{ verschil > 0 and verschil <= 0.8 }}"
+                sequence:
+                  - service: fan.set_percentage
+                    data:
+                      percentage: "{% if richting == 'reverse' %} 25 {% else %} 33 {% endif %}"
+                    target:
+                      entity_id: "{{ fan_id }}"
 
       - conditions:
           - condition: template
